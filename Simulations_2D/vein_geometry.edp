@@ -1,0 +1,26 @@
+int nNodes = 0;
+int nVessels = 0; 
+// nodes coordinates
+real[int] xN(nNodes),yN(nNodes),zN(nNodes);
+// vessels
+real[int] rV(nVessels); 
+int[int] p1(nVessels), p2(nVessels);
+
+
+//cout << " *** creating vein nodes... *** " << endl;
+// nodes
+
+// first vessel: directed along z (0,0,1)
+//xN(2) = 150;
+//yN(2) = 150;
+//zN(2) = 0;
+
+//xN(3) = 150;
+//yN(3) = 150;
+//zN(3) = 200;
+
+//cout << " *** creating vessels... *** " << endl;
+// generate vessels
+//p1(1) = 2;
+//p2(1) = 3;
+//rV(1) = 20;

@@ -1,0 +1,59 @@
+# ======================= 
+# INPUT FILE (GetPot): input.dat
+# ======================= 
+
+# n.b.: these variables must coincide with the freefem input file
+[coupling]
+fileCells2FEM = output/cells.txt
+fileCellsDensity2FEM = output/cell_density.txt
+fileFEM2Cells = output/concentration.txt
+
+# n.b.: these variables must coincide with the freefem input file
+[fem]
+meshdir = './'
+meshname = 'domain_adaptive_200x200x200_no_vessel_2D.mesh'
+FreeFemFile = diffusion_solver_3d.edp
+FreeFemCall = FreeFem++
+femSolverType = 1
+
+[cells]
+n_initial_cells = 1
+n_steps = 200
+time_step = 1
+hypoxic_birth = 1e-3
+normoxic_birth = 1e-2
+variance_motion = 4e-3
+
+[mutations]
+initial_phenotype = 0.5
+mutation_amount = 0.05
+mutation_probability = 1e-4
+alpha_s = 2.5
+
+
+[geo]
+boxesx = 21
+boxesy = 21
+boxesz = 21
+lattice_length_x = 200.1
+lattice_length_y = 200.1
+lattice_length_z = 200.1
+ic_cell_x = '100.0'
+ic_cell_y =  '100.0'
+max_cell = 50000
+dimension = 2
+
+[vessels]
+n_initial_vessels = 0
+
+
+[postprocessing]
+outputDirectory = ./vtk/  # where to put the output files
+testcase = 2D_test # name to identify the test case
+casename = 2D_test
+casedirectory = ./output/
+verbose = 0
+writeVtkCells = 1
+writeVtkFibres = 0
+writeVtkVessels = 0
+writeCells = 0
