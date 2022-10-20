@@ -404,7 +404,7 @@ void CoupledModel::init(string f)
   double cell_estimated_volume = 4./3.*PIG*pow(this->max_radius_cell,3.);
   double box_volume =  this->box_sizex*this->box_sizey*this->box_sizez;
   if (params.dimension == 2) {
-    cell_estimated_volume = 2.*PIG*pow(this->max_radius_cell,2.); // CICELYQU. - SHOULD THIS BE 1.*PIG*pow(this->max_radius_cell,2.)
+    cell_estimated_volume = PIG*pow(this->max_radius_cell,2.);
     box_volume =  this->box_sizex*this->box_sizey;
   }
 
@@ -578,7 +578,7 @@ void CoupledModel::set_ic_cells(string filename)
     ic_all_cells >> cell.adhesion;
     
     // (default) oxygen concentration
-    cell.O2 = 100.; // !! TODO: this should be given by the diffusion solver !!
+    cell.O2 = 100.;//100.; // !! TODO: this should be given by the diffusion solver !!
     cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
@@ -713,7 +713,7 @@ void CoupledModel::set_ic_cells()
     cell.polarised = 0;
 
     // oxygen concentration
-    cell.O2 = 100.; // !! TODO: this should be given by the diffusion solver !!
+    cell.O2 = 100.;//100.; // !! TODO: this should be given by the diffusion solver !!
     cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
@@ -1152,7 +1152,7 @@ void CoupledModel::cell_mutation(Cell& cell)
    change the status of cell according to O2 concentration
    *************************************************************************** */
 /// @todo add state change in the Cell variable
-void CoupledModel::oxy_in_cell(Cell& cell)
+/*void CoupledModel::oxy_in_cell(Cell& cell)
 {
   // if cell is alive
   if(cell.type != 3) {
@@ -1182,7 +1182,7 @@ void CoupledModel::oxy_in_cell(Cell& cell)
       //cout << "!!! cell " << cell.name << " has died due to being hypoxic for too long!!!" << endl;
     }
   }		
-}
+}*/
 
 /* ***************************************************************************
    change the status of cell according to phenotype
@@ -1206,7 +1206,7 @@ void CoupledModel::phenotype_of_cell(Cell& cell)
 /* ******************************************************************************
    revert cell phenotype hypoxic->normoxic if cell has enough oxygen
    ****************************************************************************** */
-void CoupledModel::reverse_phenotype(Cell& cell)
+/*void CoupledModel::reverse_phenotype(Cell& cell)
 {
   /// @todo add a parameter for regulating reversion // CICELYQU. - does this need refining???
   double time_steps_per_day = 60.*24./(params.time_step+0.0);
@@ -1215,7 +1215,7 @@ void CoupledModel::reverse_phenotype(Cell& cell)
     cell.type = 1;
     cout << " ** reverse_phenotype: reverting cell " << cell.name << " to normoxic ** " << endl;
   } 
-}
+}*/
 
 /* ********************************************************************************
    Calculates the new cells in the system for different phenotypes  
@@ -1241,55 +1241,51 @@ void CoupledModel::cell_birth(Cell& cell)
   this->birth_energy = params.be_multiplier * force_rep / (2 * PIG * be_d);
   
   // coordinate of the box of the cell //TOMMASO
-  //int bx=(int)(floor(cell.position[0]/this->box_sizex));
-  //int by=(int)(floor(cell.position[1]/this->box_sizey));
-  //int bz=(int)(floor(cell.position[2]/this->box_sizez));
+  int bx=(int)(floor(cell.position[0]/this->box_sizex));
+  int by=(int)(floor(cell.position[1]/this->box_sizey));
+  int bz=(int)(floor(cell.position[2]/this->box_sizez));
 
-  // CICELYQU. are we happy with all of these values?
-  double max_contacts = params.contact_inhibition;
-  bool birthconds = false;
-  if (cell.contacts<=max_contacts &&
-        cell.type!=3 &&
-        //cell.type==1 && // type = 1: normoxic cells
-        //this->boxes_A[bx][by][bz].cells.size()<=max_cell_in_box && //competition for space //TOMMASO
-        cell.radius>0.99*max_radius_cell &&
-        cell.energy<=this->birth_energy) {
-      //cout << " the birth conditions are met " << endl;
-      birthconds = true;
+  // TOMMASO FUNCTION
+  double x = 1.0-cell.cont_pheno;
+  double f = params.hypoxic_birth*params.time_step*(1.0-(1.0-x)*(1.0-x));
+  double g = params.normoxic_birth*params.time_step*(cell.O2/(cell.O2+params.alpha_s))*(1-x*x);
+  double n = this->boxes_A[bx][by][bz].cells.size();
+  double death_rate = params.death*pow(5,n);
+  double R = f+g-death_rate;
+
+  //bool deathconds = false;
+  if (R<0){
+      double death_threshold = abs(R);
+      double probability = aleatorio();
+      if (probability < death_threshold){
+          //deathconds = true;
+          cell.type=3;
+          if (params.verbose>2) {
+              cout << "!!!!!!!!! WARNING: at time " << this->reloj << " cell " << cell.name <<
+                   " has died and will be removed " << endl;
+          }
+      }
   }
 
+  bool birthconds = false;
+  if (R>0){
+      double birth_threshold = R;
+      double probability = aleatorio();
+      // CICELYQU. are we happy with all of these values?
+      double max_contacts = params.contact_inhibition;
+      if (cell.contacts<=max_contacts &&
+          cell.type!=3 &&
+          cell.radius>0.99*max_radius_cell &&
+          cell.energy<=this->birth_energy &&
+          probability < birth_threshold) {
+          birthconds = true;
+      }
+  }
+
+
   if(birthconds){
-      
-        double birth_probability = aleatorio();
-    
-        // TOMMASO FUNCTION
-        double x = 1.0-cell.cont_pheno;
-        double f = params.hypoxic_birth*(1.0-(1.0-x)*(1.0-x));
-        double g = params.normoxic_birth*(cell.O2/(cell.O2+params.alpha_s))*(1-x*x);
-        double birth_threshold = f+g;
-        double death_threshold = params.death;//_2.0*params.hypoxic_birth;//*this->boxes_A[bx][by][bz].cells.size();
-        // ===================
-        //cout << "DEATH THRESHOLD " << death_threshold << endl;
 
-        //double birth_threshold = params.alpha_birthrate[cell.interaction_phenotype];
-
-        // TOMMASO Proj.
-        if (birth_probability < death_threshold) {
-            cell.type=3;
-            if (params.verbose>2) {
-                cout << "!!!!!!!!! WARNING: at time " << this->reloj << " cell " << cell.name <<
-                     " has died and will be removed " << endl;
-            }
-        } else if(birth_probability < birth_threshold+death_threshold) {
-
-            if (params.verbose > 2) {
-                cout << " ** new birth at time " << this->reloj
-                     << " mother: " << cell.name
-                     << ", new number of cells " << this->total_no_of_cells + cells_counter + 1
-                     << " ** " << endl;
-            }
-
-            // 3D: 2.rnew^3 = rold^3; 2D: 2.rnew^2 = rold^2
+      // 3D: 2.rnew^3 = rold^3; 2D: 2.rnew^2 = rold^2
             double new_radius = cell.radius / pow(2., 1. / params.dimension);
             //We reset the radius and intracellular concentrations of the mother cell
             //this->boxes_A[cell.box[0]][cell.box[1]][cell.box[2]].cells[position_in_box_array].radius=new_radius;
@@ -1356,7 +1352,7 @@ void CoupledModel::cell_birth(Cell& cell)
                 int c2 = (int) (floor(newpositiony / this->box_sizey));
                 int c3 = (int) (floor(newpositionz / this->box_sizez));
 
-                if (this->boxes_A[c1][c2][c3].cells.size() >= max_cell_in_box) {
+                /*if (this->boxes_A[c1][c2][c3].cells.size() >= max_cell_in_box) {
                     cout << " *** WARNING (time step " << reloj
                          << "): !! too many cells !! *** " << endl;
                     cout << " *** in box " << c1 << "," << c2 << "," << c3 << endl;
@@ -1364,7 +1360,7 @@ void CoupledModel::cell_birth(Cell& cell)
                     cout << " *** (max_cell_in_box = " << max_cell_in_box << ")" << endl;
                     //this->end();
                     //exit(1);
-                }
+                }*/
 
                 // ============================
                 // create a new cell
@@ -1512,7 +1508,6 @@ void CoupledModel::cell_birth(Cell& cell)
                     }
                 }
             }
-        }
   }
         
   //grow if still possible
@@ -2887,7 +2882,7 @@ void CoupledModel::loop()
         ///@todo remove when we have a better measure of density change
         //int n_cells_old = this->total_no_of_cells;
 
-        if ((this->reloj%100)==0) {
+        if ((this->reloj%10000)==0) {
 	        cout << " *** time step: " << this->reloj << " (of " << params.n_steps << ") " 
 	        << " *** n. of cells: " << this->total_no_of_cells
             //<< " *** n. of dead cells: " << this->total_no_of_removed_cells
@@ -2945,19 +2940,6 @@ void CoupledModel::loop()
             else {
 	            this->oxy_diff.launch = ( (density_change>200) || (this->reloj%1000==0) );
             }
-        
-            /*
-            } else if (total_no_of_cells<5000) {
-	            this->oxy_diff.launch = ((density_change>80) || (this->reloj%500==0) );
-	
-            } else if (total_no_of_cells<10000) {
-                this->oxy_diff.launch = ((density_change>100) ||  (this->reloj%3000==0)) ;
-	            this->oxy_diff.launch = this->oxy_diff.launch &&  (relative_density_change>0.08);
-	
-            } else {
-	            this->oxy_diff.launch = (density_change>200) && (relative_density_change>0.1);	
-            }
-            */
 
             // We now run the fem every iteration
             if (this->oxy_diff.launch) {
@@ -3343,8 +3325,9 @@ void CoupledModel::loop()
         // write output list of cells
         std::stringstream outputFileName;
         std::string s0;
-    
-        if (params.writeVtkCells) {
+
+        //
+        if (params.writeVtkCells && (this->reloj%10000==0)) {
             s0 = this->params.outputDirectory + this->params.testcase + "_cells.";
             outputFileName << s0  << reloj << ".vtk";
             this->writeVtk(outputFileName.str());      
@@ -3363,6 +3346,13 @@ void CoupledModel::loop()
             vessels_outputFileName << s0  << reloj << ".vtk";
             this->writeVesselsVtk(vessels_outputFileName.str());
         }
+
+      if (params.writeVtkBoxes && (this->reloj%500000==0)) {
+          s0 = this->params.outputDirectory + this->params.testcase + "_boxes.";
+          std::stringstream boxes_outputFileName;
+          boxes_outputFileName << s0  << reloj << ".vtk";
+          this->writeBoxesVtk(boxes_outputFileName.str());
+      }
 
         //if (params.alpha_birthrate[0]==0){
         if (reloj == params.n_steps){
@@ -3616,9 +3606,13 @@ void CoupledModel::end()
     cells_outputFileName << s0  << reloj << ".vtk";
     this->writeVtk(cells_outputFileName.str());
   }
-  
-  s0 = this->params.outputDirectory + this->params.testcase + "_boxes.vtk";
-  this->writeBoxesVtk(s0);
+
+  if (params.writeVtkBoxes==0) {
+      s0 = this->params.outputDirectory + this->params.testcase + "_boxes.";
+      std::stringstream boxes_outputFileName;
+      boxes_outputFileName << s0  << reloj << ".vtk";
+      this->writeBoxesVtk(boxes_outputFileName.str());
+  }
 
   if (params.writeCellList) {
     ofstream outCellFile;
@@ -3898,6 +3892,7 @@ void CoupledModel::writeBoxesVtk(string filename)
       }
     }  
   }
+
   // nodes
   ofile << "CELL_TYPES " << nCells  << endl;
   for (unsigned int k=0; k<params.boxesz; k++){
@@ -3916,6 +3911,23 @@ void CoupledModel::writeBoxesVtk(string filename)
 	    ofile << this->boxes_A[i][j][k].cells.size()<< endl;
       }
     }
+  }
+
+  ofile << "SCALARS average_phenotype float" << endl;
+  ofile << "LOOKUP_TABLE default" << endl;
+  for (unsigned int k=0; k<params.boxesz; k++){
+      for (unsigned int j=0; j<params.boxesy; j++){
+          for (unsigned int i=0; i<params.boxesx; i++){
+              double phenotype = -1;
+              if (this->boxes_A[i][j][k].cells.size()>0) {
+                  phenotype = 0;
+                  for (unsigned int nc = 0; nc < this->boxes_A[i][j][k].cells.size(); nc++) {
+                      phenotype += this->boxes_A[i][j][k].cells[nc].cont_pheno / this->boxes_A[i][j][k].cells.size();
+                  }
+              }
+              ofile << phenotype << endl;
+          }
+      }
   }
   ofile.close();
 }

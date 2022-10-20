@@ -186,7 +186,8 @@ class Param
   string fileCellsTracking;
   int writeVtkCells;
   int writeVtkFibres; 
-  int writeVtkVessels; 
+  int writeVtkVessels;
+  int writeVtkBoxes;
   int getGenealogy;
   int writeCellList;
   string fileCells;

@@ -67,15 +67,15 @@ void Param::readFile(string _file)
     adhesion_value[k] = ifile("cells/adhesion_value",3.72e-4,k);
   }
 
-  compressibility = ifile("cells/compressibility", 6.0);
-  contact_inhibition = ifile("cells/contact_inhibition",16.);
+  compressibility = ifile("cells/compressibility", 1.0);
+  contact_inhibition = ifile("cells/contact_inhibition",8.);
   // birth energy parameters
   hypoxic_birth = ifile("cells/hypoxic_birth",6.0e-5); // TOMMASO
   normoxic_birth = ifile("cells/normoxic_birth",6.0e-4); // TOMMASO
   death = ifile("cells/death",0.0); // TOMMASO
   hypoxic_friction = ifile("cells/hypoxic_friction",1.0); // TOMMASO
   be_displacement = ifile("cells/be_displacement",1.5);
-  be_multiplier = ifile("cells/be_multiplier",12.0);
+  be_multiplier = ifile("cells/be_multiplier",2.0);
   variance_motion = ifile("cells/variance_motion",4e-3);
   variance_phenotype = ifile("cells/variance_phenotype",0.);
   variance_adhesion = ifile("cells/variance_adhesion",0.);
@@ -232,6 +232,7 @@ void Param::readFile(string _file)
   writeCellList = ifile("postprocessing/writeCellList",0);
   writeVtkFibres = ifile("postprocessing/writeVtkFibres",0);
   writeVtkVessels = ifile("postprocessing/writeVtkVessels",0);
+  writeVtkBoxes = ifile("postprocessing/writeVtkBoxes",0);
   getGenealogy = ifile("postprocessing/getGenealogy",0);
   outputDirectory = ifile("postprocessing/outputDirectory","./");
   testcase = ifile("postprocessing/testcase","test");
@@ -470,6 +471,7 @@ void Param::print()
   cout << "writeVtkCells = " << writeVtkCells << endl;
   cout << "writeVtkFibres = " << writeVtkFibres << endl;
   cout << "writeVtkVessels = " << writeVtkVessels << endl;
+  cout << "writeVtkBoxes = " << writeVtkBoxes << endl;
   cout << "getGenealogy = " << getGenealogy << endl;
   cout << "writeCellList = " << writeCellList << endl;
   cout << "fileCells = " << fileCells << endl;
