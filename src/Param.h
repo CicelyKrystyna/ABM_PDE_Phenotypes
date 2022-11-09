@@ -91,6 +91,7 @@ class Param
   double alpha_s;
     
   // [oxygen] --- pde (oxygen)
+  double initial_oxygen;
   double oxygen_response;
   double threshold_hypo;
   /// @brief threshold hypo->death

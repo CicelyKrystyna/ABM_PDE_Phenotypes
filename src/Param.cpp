@@ -106,6 +106,7 @@ void Param::readFile(string _file)
   alpha_s = ifile("mutations/alpha_s",1.5);
 
   // [oxygen]
+  initial_oxygen = ifile("oxygen/initial_oxygen",100.0);
   oxygen_response = ifile("oxygen/oxygen_response",.0);
   threshold_death = ifile("oxygen/threshold_death",.7);
   threshold_hypo = ifile("oxygen/threshold_hypo",7.);
@@ -359,6 +360,7 @@ void Param::print()
   cout << endl;
   
   cout << "[oxygen]" << endl;
+  cout << "initial_oxygen = " << initial_oxygen << endl;
   cout << "oxygen_response = " << oxygen_response << endl;
   cout << "threshold_death = " << threshold_death << endl;
   cout << "threshold_hypo = " << threshold_hypo << endl;

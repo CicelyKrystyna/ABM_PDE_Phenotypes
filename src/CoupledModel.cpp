@@ -578,7 +578,7 @@ void CoupledModel::set_ic_cells(string filename)
     ic_all_cells >> cell.adhesion;
     
     // (default) oxygen concentration
-    cell.O2 = 100.;//100.; // !! TODO: this should be given by the diffusion solver !!
+    cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
     cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
@@ -713,7 +713,7 @@ void CoupledModel::set_ic_cells()
     cell.polarised = 0;
 
     // oxygen concentration
-    cell.O2 = 100.;//100.; // !! TODO: this should be given by the diffusion solver !!
+    cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
     cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
