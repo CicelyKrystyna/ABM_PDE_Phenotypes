@@ -3557,7 +3557,9 @@ void CoupledModel::count_cells_per_type()
   this->totDead.push_back(countDead);
   
   ofstream nCellFile;
-  nCellFile.open("cell_counter.txt",ios::app);
+  std::string filename;
+  filename = this->params.casedirectory +  "cell_counter.txt";
+  nCellFile.open(filename,ios::app);
   if (!nCellFile) {
     cerr << " *** ERROR *** could not open file *** " << endl;
     exit(1);
