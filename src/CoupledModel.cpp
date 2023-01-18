@@ -11,7 +11,7 @@ double PIG=3.1415926535897932384626433832795;
 
 double CoupledModel::oxygen_concentration_function(vector<double>& position)
 {
-  switch this->params.initial_concentration_function_type {
+  switch (this->params.initial_concentration_function_type) {
     case 0:
       return this->params.initial_oxygen;
     
@@ -24,7 +24,7 @@ double CoupledModel::oxygen_concentration_function(vector<double>& position)
     }
     
     default: {
-      cout << " ** warning CoupledModel::oxygen_concentration_function(): invalid function_type = " << function_type << endl;
+      cout << " ** warning CoupledModel::oxygen_concentration_function(): invalid function_type = " << this->params.initial_concentration_function_type << endl;
       return this->params.initial_oxygen;
     }
     
