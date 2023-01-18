@@ -9,15 +9,23 @@ using namespace std;
 
 double PIG=3.1415926535897932384626433832795;
 
-double CoupledModel::oxygen_concentration_function(vector<double>& position, int function_type)
+double CoupledModel::oxygen_concentration_function(vector<double>& position const)
 {
-  switch function_type {
+  switch this->params.initial_concentration_function_type {
+    case 0:
+      return this->params.initial_oxygen;
+    
     case 1: {
-      return 1;
+      if (position[0]<=this->params.lattice_length_x/2.0){
+        return 1.;
+      } else {
+        return 100.;
+      }
     }
+    
     default: {
       cout << " ** warning CoupledModel::oxygen_concentration_function(): invalid function_type = " << function_type << endl;
-      return 1.;
+      return this->params.initial_oxygen;
     }
   }
 }
@@ -589,14 +597,22 @@ void CoupledModel::set_ic_cells(string filename)
     ic_all_cells >> cell.adhesion;
     
     // (default) oxygen concentration
-    if params.initial_concentration_function_type == 0 {
-      cell.O2 = params.initial_oxygen; 
-    } else {
-      cell.O2 = params.initial_oxygen*oxygen_concentration_function(cell.position,params.initial_concentration_function_type);    
-    }    
+    cell.O2 = oxygen_concentration_function(cell.position);    
     cell.dxO2 = 0.; 
     cell.dyO2 = 0.; 
     cell.dzO2 = 0.; 
+/*
+    if (cell.position[0]<=params.lattice_length_x/2.0){
+        cell.O2 = 1;
+    }
+    else if (cell.position[0]>params.lattice_length_x/2.0){
+          cell.O2 = 100;
+    }
+    */
+    //cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
+    cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
+    cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
+    cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     
     if (cell.interaction_phenotype==0) this->phenotype1_count++;
     else this->phenotype2_count++;
@@ -728,12 +744,16 @@ void CoupledModel::set_ic_cells()
 
     // oxygen concentration
     // (default) oxygen concentration
-    if params.initial_concentration_function_type == 0 {
-      cell.O2 = params.initial_oxygen; 
-    } else {
-      cell.O2 = params.initial_oxygen*oxygen_concentration_function(cell.position,params.initial_concentration_function_type);    
-    } 
-    //cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
+    cell.O2 = oxygen_concentration_function(cell.position);    
+    /*
+      if (cell.position[0]<=params.lattice_length_x/2.0){
+          cell.O2 = 1;
+      }
+      else if (cell.position[0]>params.lattice_length_x/2.0){
+          cell.O2 = 100;
+      }
+    */
+   //cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
     cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
@@ -1412,7 +1432,13 @@ void CoupledModel::cell_birth(Cell& cell)
 
                 // oxygen concentration
                 newcell.type = cell.type; ///@attention we take type of mother
-                newcell.O2 = cell.O2;
+                if (newcell.position[0]<=params.lattice_length_x/2.0){
+                   newcell.O2 = 1;
+                }
+                else if (newcell.position[0]>params.lattice_length_x/2.0){
+                    newcell.O2 = 100;
+                }
+                //newcell.O2 = cell.O2;
                 newcell.dxO2 = cell.dxO2;
                 newcell.dyO2 = cell.dyO2;
                 newcell.dzO2 = cell.dzO2;
@@ -2185,6 +2211,16 @@ void CoupledModel::movement(const Cell& cell,
     celula_nueva.position[2]= this->boxes_A[u][v][w].cells[cont_cell].position[2] + 
       this->movez * params.time_step * this->boxes_A[u][v][w].cells[cont_cell].vel[2];
   }
+
+  // PICK UP O2 AT CELL LOCATION
+    if (celula_nueva.position[0]<=params.lattice_length_x/2.0){
+        celula_nueva.O2 = 1;
+    }
+    else if (celula_nueva.position[0]>params.lattice_length_x/2.0){
+        celula_nueva.O2 = 100;
+    }
+
+
 
   /* periodic boundary
       if (celula_nueva.position[0]<0) {
@@ -3348,6 +3384,7 @@ void CoupledModel::loop()
 
         //
         if (params.writeVtkCells && (this->reloj%10000==0)) {
+        //if (params.writeVtkCells) {
             s0 = this->params.outputDirectory + this->params.testcase + "_cells.";
             outputFileName << s0  << reloj << ".vtk";
             this->writeVtk(outputFileName.str());      

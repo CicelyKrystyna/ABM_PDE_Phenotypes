@@ -147,7 +147,7 @@ class CoupledModel
   void count_cells_per_type();
 
   // @brief set cell initial conditions from function
-  double oxygen_concentration_function(vector<double>& position, int function_type);
+  double oxygen_concentration_function(vector<double>& position);
 
   // ******************
   // random generators
