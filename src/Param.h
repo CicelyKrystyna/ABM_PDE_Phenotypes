@@ -91,6 +91,7 @@ class Param
   double alpha_s;
     
   // [oxygen] --- pde (oxygen)
+  int initial_concentration_function_type;
   double initial_oxygen;
   double oxygen_response;
   double threshold_hypo;

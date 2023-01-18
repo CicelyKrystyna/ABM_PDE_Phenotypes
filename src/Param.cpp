@@ -110,7 +110,8 @@ void Param::readFile(string _file)
   oxygen_response = ifile("oxygen/oxygen_response",.0);
   threshold_death = ifile("oxygen/threshold_death",.7);
   threshold_hypo = ifile("oxygen/threshold_hypo",7.);
-  
+  initial_concentration_function_type = ifile("oxygen/initial_concentration_function_type",0.0);
+
   // [fem] --- pde (oxygen)
   femSolverType = ifile("fem/femSolverType",0);
   meshdir = ifile("fem/meshdir","./");

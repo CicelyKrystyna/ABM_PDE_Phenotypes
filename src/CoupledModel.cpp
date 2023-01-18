@@ -9,6 +9,26 @@ using namespace std;
 
 double PIG=3.1415926535897932384626433832795;
 
+double CoupledModel::oxygen_concentration_function(vector<double>& position const)
+{
+  switch this->params.initial_concentration_function_type {
+    case 0:
+      return this->params.initial_oxygen;
+    
+    case 1: {
+      if (position[0]<=this->params.lattice_length_x/2.0){
+        return 1.;
+      } else {
+        return 100.;
+      }
+    }
+    
+    default: {
+      cout << " ** warning CoupledModel::oxygen_concentration_function(): invalid function_type = " << function_type << endl;
+      return this->params.initial_oxygen;
+    }
+  }
+}
 /* *****************************************************************************
    ALEATORIO: Generates random numbers between 0 and 1              
    ***************************************************************************** */
@@ -514,7 +534,6 @@ void CoupledModel::allocate_compare_box()
     } 
   }
 }
-
 /* **************************************************************************
    place initial cells in the system - [read from file]
    ***************************************************************************** */
@@ -578,17 +597,22 @@ void CoupledModel::set_ic_cells(string filename)
     ic_all_cells >> cell.adhesion;
     
     // (default) oxygen concentration
+    cell.O2 = oxygen_concentration_function(cell.position);    
+    cell.dxO2 = 0.; 
+    cell.dyO2 = 0.; 
+    cell.dzO2 = 0.; 
+/*
     if (cell.position[0]<=params.lattice_length_x/2.0){
         cell.O2 = 1;
     }
     else if (cell.position[0]>params.lattice_length_x/2.0){
           cell.O2 = 100;
     }
+    */
     //cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
     cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
-    
     
     if (cell.interaction_phenotype==0) this->phenotype1_count++;
     else this->phenotype2_count++;
@@ -719,13 +743,17 @@ void CoupledModel::set_ic_cells()
     cell.polarised = 0;
 
     // oxygen concentration
+    // (default) oxygen concentration
+    cell.O2 = oxygen_concentration_function(cell.position);    
+    /*
       if (cell.position[0]<=params.lattice_length_x/2.0){
           cell.O2 = 1;
       }
       else if (cell.position[0]>params.lattice_length_x/2.0){
           cell.O2 = 100;
       }
-    //cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
+    */
+   //cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
     cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
