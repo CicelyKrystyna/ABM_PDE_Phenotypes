@@ -578,7 +578,13 @@ void CoupledModel::set_ic_cells(string filename)
     ic_all_cells >> cell.adhesion;
     
     // (default) oxygen concentration
-    cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
+    if (cell.position[0]<=params.lattice_length_x/2.0){
+        cell.O2 = 1;
+    }
+    else if (cell.position[0]>params.lattice_length_x/2.0){
+          cell.O2 = 100;
+    }
+    //cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
     cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
@@ -713,7 +719,13 @@ void CoupledModel::set_ic_cells()
     cell.polarised = 0;
 
     // oxygen concentration
-    cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
+      if (cell.position[0]<=params.lattice_length_x/2.0){
+          cell.O2 = 1;
+      }
+      else if (cell.position[0]>params.lattice_length_x/2.0){
+          cell.O2 = 100;
+      }
+    //cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
     cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
@@ -1392,7 +1404,13 @@ void CoupledModel::cell_birth(Cell& cell)
 
                 // oxygen concentration
                 newcell.type = cell.type; ///@attention we take type of mother
-                newcell.O2 = cell.O2;
+                if (newcell.position[0]<=params.lattice_length_x/2.0){
+                   newcell.O2 = 1;
+                }
+                else if (newcell.position[0]>params.lattice_length_x/2.0){
+                    newcell.O2 = 100;
+                }
+                //newcell.O2 = cell.O2;
                 newcell.dxO2 = cell.dxO2;
                 newcell.dyO2 = cell.dyO2;
                 newcell.dzO2 = cell.dzO2;
@@ -2165,6 +2183,16 @@ void CoupledModel::movement(const Cell& cell,
     celula_nueva.position[2]= this->boxes_A[u][v][w].cells[cont_cell].position[2] + 
       this->movez * params.time_step * this->boxes_A[u][v][w].cells[cont_cell].vel[2];
   }
+
+  // PICK UP O2 AT CELL LOCATION
+    if (celula_nueva.position[0]<=params.lattice_length_x/2.0){
+        celula_nueva.O2 = 1;
+    }
+    else if (celula_nueva.position[0]>params.lattice_length_x/2.0){
+        celula_nueva.O2 = 100;
+    }
+
+
 
   /* periodic boundary
       if (celula_nueva.position[0]<0) {
@@ -3328,6 +3356,7 @@ void CoupledModel::loop()
 
         //
         if (params.writeVtkCells && (this->reloj%10000==0)) {
+        //if (params.writeVtkCells) {
             s0 = this->params.outputDirectory + this->params.testcase + "_cells.";
             outputFileName << s0  << reloj << ".vtk";
             this->writeVtk(outputFileName.str());      
