@@ -146,6 +146,9 @@ class CoupledModel
   /// @brief store the number of cells of different status
   void count_cells_per_type();
 
+  // @brief set cell initial conditions from function
+  double oxygen_concentration_function(vector<double>& position, int function_type);
+
   // ******************
   // random generators
   /// @brief random between 0 and 1
@@ -177,6 +180,7 @@ class CoupledModel
   // @brief revert cell phenotype hypoxic->normoxic (stochastic)
   void reverse_phenotype(Cell& cell);
 
+  
   // ******************
   // fibre functions
   /// @brief cross-product function
