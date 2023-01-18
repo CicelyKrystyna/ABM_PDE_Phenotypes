@@ -9,6 +9,12 @@ using namespace std;
 
 double PIG=3.1415926535897932384626433832795;
 
+// use this function to specify an initial concentration as an analytic function of space
+// the function uses as parameter and int params.initial_concentration_function_type
+// 0: constant value (returns the old version params.initial_oxygen)
+// 1: two values (half-half)
+// 2: ...
+// if the type is invalid, the function uses type = 0
 double CoupledModel::oxygen_concentration_function(vector<double>& position)
 {
   switch (this->params.initial_concentration_function_type) {
