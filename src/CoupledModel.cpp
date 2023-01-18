@@ -9,7 +9,7 @@ using namespace std;
 
 double PIG=3.1415926535897932384626433832795;
 
-double CoupledModel::oxygen_concentration_function(vector<double>& position const)
+double CoupledModel::oxygen_concentration_function(vector<double>& position)
 {
   switch this->params.initial_concentration_function_type {
     case 0:
@@ -27,7 +27,9 @@ double CoupledModel::oxygen_concentration_function(vector<double>& position cons
       cout << " ** warning CoupledModel::oxygen_concentration_function(): invalid function_type = " << function_type << endl;
       return this->params.initial_oxygen;
     }
+    
   }
+  return this->params.initial_oxygen;
 }
 /* *****************************************************************************
    ALEATORIO: Generates random numbers between 0 and 1              
