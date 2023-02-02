@@ -13,7 +13,8 @@ double PIG=3.1415926535897932384626433832795;
 // the function uses as parameter and int params.initial_concentration_function_type
 // 0: constant value (returns the old version params.initial_oxygen)
 // 1: two values (half-half)
-// 2: ...
+// 2: oxygen changes with radius from centre of the domain (considered 200x200)
+// 3: ...
 // if the type is invalid, the function uses type = 0
 double CoupledModel::oxygen_concentration_function(vector<double>& position)
 {
@@ -27,6 +28,17 @@ double CoupledModel::oxygen_concentration_function(vector<double>& position)
       } else {
         return 100.;
       }
+    }
+
+    case 2: {
+        double radius_from_centre;
+        radius_from_centre = (100-position[0])*(100-position[0])+(100-position[1])*(100-position[1]);
+        radius_from_centre = sqrt(radius_from_centre);
+        if (100 - radius_from_centre > 1){
+            return 100 - radius_from_centre;
+        } else {
+            return 1;
+        }
     }
     
     default: {
@@ -604,19 +616,8 @@ void CoupledModel::set_ic_cells(string filename)
     ic_all_cells >> cell.is_follower;
     ic_all_cells >> cell.adhesion;
     
-    // (default) oxygen concentration
-    cell.O2 = oxygen_concentration_function(cell.position);    
-    cell.dxO2 = 0.; 
-    cell.dyO2 = 0.; 
-    cell.dzO2 = 0.; 
-/*
-    if (cell.position[0]<=params.lattice_length_x/2.0){
-        cell.O2 = 1;
-    }
-    else if (cell.position[0]>params.lattice_length_x/2.0){
-          cell.O2 = 100;
-    }
-    */
+    // oxygen concentration
+    cell.O2 = oxygen_concentration_function(cell.position);
     //cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
     cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
@@ -751,17 +752,8 @@ void CoupledModel::set_ic_cells()
     cell.polarised = 0;
 
     // oxygen concentration
-    // (default) oxygen concentration
-    cell.O2 = oxygen_concentration_function(cell.position);    
-    /*
-      if (cell.position[0]<=params.lattice_length_x/2.0){
-          cell.O2 = 1;
-      }
-      else if (cell.position[0]>params.lattice_length_x/2.0){
-          cell.O2 = 100;
-      }
-    */
-   //cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
+    cell.O2 = oxygen_concentration_function(cell.position);
+    //cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
     cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
@@ -1440,12 +1432,7 @@ void CoupledModel::cell_birth(Cell& cell)
 
                 // oxygen concentration
                 newcell.type = cell.type; ///@attention we take type of mother
-                if (newcell.position[0]<=params.lattice_length_x/2.0){
-                   newcell.O2 = 1;
-                }
-                else if (newcell.position[0]>params.lattice_length_x/2.0){
-                    newcell.O2 = 100;
-                }
+                newcell.O2 = oxygen_concentration_function(newcell.position);
                 //newcell.O2 = cell.O2;
                 newcell.dxO2 = cell.dxO2;
                 newcell.dyO2 = cell.dyO2;
@@ -2221,14 +2208,7 @@ void CoupledModel::movement(const Cell& cell,
   }
 
   // PICK UP O2 AT CELL LOCATION
-    if (celula_nueva.position[0]<=params.lattice_length_x/2.0){
-        celula_nueva.O2 = 1;
-    }
-    else if (celula_nueva.position[0]>params.lattice_length_x/2.0){
-        celula_nueva.O2 = 100;
-    }
-
-
+  celula_nueva.O2 = oxygen_concentration_function(celula_nueva.position);
 
   /* periodic boundary
       if (celula_nueva.position[0]<0) {
