@@ -13,8 +13,8 @@ double PIG=3.1415926535897932384626433832795;
 // the function uses as parameter and int params.initial_concentration_function_type
 // 0: constant value (returns the old version params.initial_oxygen)
 // 1: two values (half-half)
-// 2: oxygen changes with radius from centre of the domain (considered 200x200)
-// 3: ...
+// 2: two values inner circle well oxygenated (considered 200x200)
+// 3: oxygen changes with radius from centre of the domain (considered 200x200)
 // if the type is invalid, the function uses type = 0
 double CoupledModel::oxygen_concentration_function(vector<double>& position)
 {
@@ -32,10 +32,24 @@ double CoupledModel::oxygen_concentration_function(vector<double>& position)
 
     case 2: {
         double radius_from_centre;
-        radius_from_centre = (100-position[0])*(100-position[0])+(100-position[1])*(100-position[1]);
+        radius_from_centre = (this->params.lattice_length_x/2.0-position[0])*(this->params.lattice_length_x/2.0-position[0])
+                +(this->params.lattice_length_y/2.0-position[1])*(this->params.lattice_length_y/2.0-position[1]);
         radius_from_centre = sqrt(radius_from_centre);
-        if (100 - radius_from_centre > 1){
-            return 100 - radius_from_centre;
+        if (radius_from_centre < 0.25*this->params.lattice_length_x/2.0) {
+            return 100;
+        } else {
+            return 1;
+        }
+    }
+
+    case 3: {
+        double radius_from_centre;
+        radius_from_centre = (this->params.lattice_length_x/2.0-position[0])*(this->params.lattice_length_x/2.0-position[0])
+                +(this->params.lattice_length_y/2.0-position[1])*(this->params.lattice_length_y/2.0-position[1]);
+        radius_from_centre = sqrt(radius_from_centre);
+        double scaled_radial_distance = radius_from_centre*200.0/this->params.lattice_length_x;
+        if (100 - scaled_radial_distance > 1){
+            return 100 - scaled_radial_distance;
         } else {
             return 1;
         }
@@ -608,7 +622,7 @@ void CoupledModel::set_ic_cells(string filename)
     // read additional parameters 
     cell.type=1;
     cell.cont_pheno = params.initial_phenotype; //ADDED 25/6/19 TOMMASO
-    cell.phenotype=params.threshold_hypo; 
+    //cell.phenotype=params.threshold_hypo;
     cell.phenotype_counter = 0; 
     cell.polarised = 0; 
     cell.hypoxic_count = 0;
@@ -622,6 +636,8 @@ void CoupledModel::set_ic_cells(string filename)
     cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
+
+    cell.phenotype = 10*cell.O2/(50+11*cell.O2);
     
     if (cell.interaction_phenotype==0) this->phenotype1_count++;
     else this->phenotype2_count++;
@@ -746,7 +762,7 @@ void CoupledModel::set_ic_cells()
     
     cell.type=1;
     cell.cont_pheno = params.initial_phenotype; /* ADDED 25/6/19 TOMMASO */
-    cell.phenotype=params.threshold_hypo; 
+    //cell.phenotype=params.threshold_hypo;
     cell.phenotype_counter = 0; 
 
     cell.polarised = 0;
@@ -757,6 +773,8 @@ void CoupledModel::set_ic_cells()
     cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
+
+    cell.phenotype = 10*cell.O2/(50+11*cell.O2);
 
     // -----
     cell.hypoxic_count = 0;
@@ -1458,12 +1476,15 @@ void CoupledModel::cell_birth(Cell& cell)
                     double valor = params.threshold_hypo +
                                    params.variance_phenotype * (1. - 2. * rand()) / (RAND_MAX + 0.0);
                     if (valor > params.threshold_death) {
-                        newcell.phenotype = valor;
+                        //newcell.phenotype = valor;
+                        newcell.phenotype = 10*newcell.O2/(50+11*newcell.O2);
                     } else {
-                        newcell.phenotype = cell.phenotype;
+                        //newcell.phenotype = cell.phenotype;
+                        newcell.phenotype = 10*newcell.O2/(50+11*newcell.O2);
                     }
                 } else {
-                    newcell.phenotype = cell.phenotype;
+                    //newcell.phenotype = cell.phenotype;
+                    newcell.phenotype = 10*newcell.O2/(50+11*newcell.O2);
                 }
                 newcell.cont_pheno = cell.cont_pheno;
                 //cout << "new cell has phenotype " << newcell.cont_pheno << endl;
@@ -2209,6 +2230,7 @@ void CoupledModel::movement(const Cell& cell,
 
   // PICK UP O2 AT CELL LOCATION
   celula_nueva.O2 = oxygen_concentration_function(celula_nueva.position);
+  celula_nueva.phenotype = 10*celula_nueva.O2/(50+11*celula_nueva.O2);
 
   /* periodic boundary
       if (celula_nueva.position[0]<0) {
@@ -3371,7 +3393,7 @@ void CoupledModel::loop()
         std::string s0;
 
         //
-        if (params.writeVtkCells && (this->reloj%10000==0)) {
+        if (params.writeVtkCells && (this->reloj%params.write_cells_frequency==0)) {
         //if (params.writeVtkCells) {
             s0 = this->params.outputDirectory + this->params.testcase + "_cells.";
             outputFileName << s0  << reloj << ".vtk";
@@ -3578,7 +3600,6 @@ void CoupledModel::count_cells_per_type()
 	        countNorm = countNorm + (cellType==1);
 	        countHypo = countHypo + (cellType==2);
 	        //countDead = countDead + (cellType==3);
-	        countDead = total_no_of_removed_cells; // TOMMASO
 	        countDead = total_no_of_removed_cells; // TOMMASO
 	        if (this->boxes_A[k][l][n].cells[i].phenotype < 10) {
 	            countPhenotypeOxygen_0_10 ++;
@@ -3792,7 +3813,7 @@ void CoupledModel::writeVtk(string filename,unsigned int onlyCoord)
     outfile << endl;
     
     //write phenoype
-    outfile << "SCALARS phenot double" << endl;
+    outfile << "SCALARS phenotype double" << endl;
     outfile << "LOOKUP_TABLE default" << endl;
     for(int k=this->minx; k<=this->maxx; k++) {
       for(int l=this->miny; l<=this->maxy; l++){

@@ -231,6 +231,7 @@ void Param::readFile(string _file)
   verbose = ifile("postprocessing/verbose",1);
   // default: write only cells
   writeVtkCells = ifile("postprocessing/writeVtkCells",1);
+  write_cells_frequency = ifile("postprocessing/write_cells_frequency",1);
   writeCellList = ifile("postprocessing/writeCellList",0);
   writeVtkFibres = ifile("postprocessing/writeVtkFibres",0);
   writeVtkVessels = ifile("postprocessing/writeVtkVessels",0);
@@ -362,6 +363,7 @@ void Param::print()
   
   cout << "[oxygen]" << endl;
   cout << "initial_oxygen = " << initial_oxygen << endl;
+  cout << "initial_concentration_function_type = " << initial_concentration_function_type << endl;
   cout << "oxygen_response = " << oxygen_response << endl;
   cout << "threshold_death = " << threshold_death << endl;
   cout << "threshold_hypo = " << threshold_hypo << endl;
@@ -472,6 +474,7 @@ void Param::print()
   cout << "outputDirectory = " << outputDirectory << endl;
   cout << "casedirectory = " << casedirectory << endl;
   cout << "writeVtkCells = " << writeVtkCells << endl;
+  cout << "write_cells_frequency = " << write_cells_frequency << endl;
   cout << "writeVtkFibres = " << writeVtkFibres << endl;
   cout << "writeVtkVessels = " << writeVtkVessels << endl;
   cout << "writeVtkBoxes = " << writeVtkBoxes << endl;
