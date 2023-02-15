@@ -45,6 +45,20 @@ double CoupledModel::oxygen_concentration_function(vector<double>& position)
     case 3: {
         double radius_from_centre;
         radius_from_centre = (this->params.lattice_length_x/2.0-position[0])*(this->params.lattice_length_x/2.0-position[0])
+                               +(this->params.lattice_length_y/2.0-position[1])*(this->params.lattice_length_y/2.0-position[1]);
+        radius_from_centre = sqrt(radius_from_centre);
+        if (radius_from_centre < 0.25*this->params.lattice_length_x/2.0) {
+            return 100;
+        } else if (0.25*this->params.lattice_length_x/2.0 < radius_from_centre && radius_from_centre < 0.5*this->params.lattice_length_x/2.0) {
+            return 6;
+        } else {
+            return 1;
+        }
+    }
+
+    /*case 3: {
+        double radius_from_centre;
+        radius_from_centre = (this->params.lattice_length_x/2.0-position[0])*(this->params.lattice_length_x/2.0-position[0])
                 +(this->params.lattice_length_y/2.0-position[1])*(this->params.lattice_length_y/2.0-position[1]);
         radius_from_centre = sqrt(radius_from_centre);
         double scaled_radial_distance = radius_from_centre*200.0/this->params.lattice_length_x;
@@ -53,7 +67,7 @@ double CoupledModel::oxygen_concentration_function(vector<double>& position)
         } else {
             return 1;
         }
-    }
+    }*/
     
     default: {
       cout << " ** warning CoupledModel::oxygen_concentration_function(): invalid function_type = " << this->params.initial_concentration_function_type << endl;
@@ -637,7 +651,7 @@ void CoupledModel::set_ic_cells(string filename)
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
 
-    cell.phenotype = 10*cell.O2/(50+11*cell.O2);
+    cell.phenotype = 10*cell.O2/(params.alpha_s+11*cell.O2);
     
     if (cell.interaction_phenotype==0) this->phenotype1_count++;
     else this->phenotype2_count++;
@@ -774,7 +788,7 @@ void CoupledModel::set_ic_cells()
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
 
-    cell.phenotype = 10*cell.O2/(50+11*cell.O2);
+    cell.phenotype = 10*cell.O2/(params.alpha_s+11*cell.O2);
 
     // -----
     cell.hypoxic_count = 0;
@@ -1477,14 +1491,14 @@ void CoupledModel::cell_birth(Cell& cell)
                                    params.variance_phenotype * (1. - 2. * rand()) / (RAND_MAX + 0.0);
                     if (valor > params.threshold_death) {
                         //newcell.phenotype = valor;
-                        newcell.phenotype = 10*newcell.O2/(50+11*newcell.O2);
+                        newcell.phenotype = 10*newcell.O2/(params.alpha_s+11*newcell.O2);
                     } else {
                         //newcell.phenotype = cell.phenotype;
-                        newcell.phenotype = 10*newcell.O2/(50+11*newcell.O2);
+                        newcell.phenotype = 10*newcell.O2/(params.alpha_s+11*newcell.O2);
                     }
                 } else {
                     //newcell.phenotype = cell.phenotype;
-                    newcell.phenotype = 10*newcell.O2/(50+11*newcell.O2);
+                    newcell.phenotype = 10*newcell.O2/(params.alpha_s+11*newcell.O2);
                 }
                 newcell.cont_pheno = cell.cont_pheno;
                 //cout << "new cell has phenotype " << newcell.cont_pheno << endl;
@@ -2230,7 +2244,7 @@ void CoupledModel::movement(const Cell& cell,
 
   // PICK UP O2 AT CELL LOCATION
   celula_nueva.O2 = oxygen_concentration_function(celula_nueva.position);
-  celula_nueva.phenotype = 10*celula_nueva.O2/(50+11*celula_nueva.O2);
+  celula_nueva.phenotype = 10*celula_nueva.O2/(params.alpha_s+11*celula_nueva.O2);
 
   /* periodic boundary
       if (celula_nueva.position[0]<0) {
