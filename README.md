@@ -6,6 +6,6 @@ Allows modelling of phenotype determination using a 3d agent-based, multiscale t
 
 To Run Simulations:
 
-* Download/Clone Repo ``` git clone ```
+* Download/Clone Repo ``` git clone https://github.com/CicelyKrystyna/ABM_PDE_Phenotypes.git```
 * Source Code: [here](https://github.com/CicelyKrystyna/ABM_PDE_Phenotypes/tree/main/src)
 * ```make``` from ```src``` directory
