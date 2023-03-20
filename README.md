@@ -8,4 +8,5 @@ To Run Simulations:
 
 * Download/Clone Repo: ``` git clone https://github.com/CicelyKrystyna/ABM_PDE_Phenotypes.git```
 * Source Code: [here](https://github.com/CicelyKrystyna/ABM_PDE_Phenotypes/tree/main/src)
-* ```make``` from ```src``` directory
+* ```make``` from [src](https://github.com/CicelyKrystyna/ABM_PDE_Phenotypes/tree/main/src) directory
+* From [EXAMPLES]() directory select one of the examples to run which you can do using ```../../src/cell++ input.dat```
