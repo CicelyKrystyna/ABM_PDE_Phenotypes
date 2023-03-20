@@ -1,7 +1,8 @@
-# VirtualTumour
+# Phenotypes Modelling
 
-3d agent-based, multiscale tumour and tumour microenvironment model
+Code for manuscript ""
 
-C++ code for coupling of agent-based model for cancer cells, blood vessels and ECM with finite element solver (FreeFem++) for diffusive components (e.g. oxygen)
+Allows modelling of phenotype determination using a 3d agent-based, multiscale tumour and tumour microenvironment model matched to the PDE Model as in Villa et al. 2021.
 
-Interactions between cells, vessels and ECM fibres are chemical and mechanical
+Source Code: [here](https://github.com/CicelyKrystyna/ABM_PDE_Phenotypes/tree/main/src)
+C++ code couples agent-based model for cancer cells and blood vessels with finite element solver (FreeFem++) for diffusion of oxygen
