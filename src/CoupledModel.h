@@ -3,7 +3,6 @@
 
 #include "PDE.h"
 #include "Cell.h"
-#include "Fibre.h"
 #include "Vessel.h"
 #include <vector>
 #include <string>
@@ -22,8 +21,6 @@
 struct Box {
   /// @brief cells belonging to box
   std::vector<Cell> cells;
-  /// @brief (pointer to) fibres belonging to box
-  std::vector<Fibre*> p_fibres;
   // @ brief mesh elements contained in the box
   std::vector<int>  v_triangles;
 };
@@ -51,9 +48,6 @@ class CoupledModel
   Param params;
   
   std::string input_file_name;
-
-  ///@brief the list of fibres in the model
-  std::vector<Fibre> fibres;
 
   // ******** vessel related
   ///@brief the list of vessels in the model
@@ -165,8 +159,6 @@ class CoupledModel
   // cell functions
   /// @brief distance between 2 cells
   double DISTANCE(const Cell& c1, const Cell& c2);
-  /// @brief distance between a cell and a fiber
-  double DISTANCE(const Cell& cell, const Fibre& fibre);
 
   /// @brief change the status of cell according to O2 concentration
   void oxy_in_cell(Cell& cell);
@@ -179,23 +171,6 @@ class CoupledModel
 		    const unsigned int cell_name);// In solve_system
   // @brief revert cell phenotype hypoxic->normoxic (stochastic)
   void reverse_phenotype(Cell& cell);
-
-  
-  // ******************
-  // fibre functions
-  /// @brief cross-product function
-  void CrossProduct(vector<double> vector_A, vector<double> vector_B, double C_P[]);
-    /// @brief dot-product function
-  double DotProduct(vector<double> vector_A, vector<double> vector_B);
-  double DotProduct(vector<double> vector_A, double vector_B[]);
-  double DotProduct(double vector_A[], double vector_B[]);
-  /// @brief function to determine if a pair of fibres cross link
-  void CROSSLINKS(const Fibre& this_fibre, const Fibre& other_fibre);
-  /// @brief determines fibres in contact with cells
-  void compute_fibre_crosslinks(const int j);
-  //void compute_fibre_crosslinks(const int u, const int v, const int w, const int j);
-
-  double crosslink_count = 0;
   
   // ******************
   // box functions
@@ -205,18 +180,12 @@ class CoupledModel
   void update_box();
   /// @brief updates the maximum value in boxes
   void update_maximum();
-  
-  
-  // ******************
-  /// @brief set initial fibres in the system 
-  void set_ic_fibres();
+
 
   ///@brief assign different ID to different parts of the domain
   int get_sub_domain_id(double x,double y,double z);
   /// @brief set initial cells in the system (from input file)
   void set_ic_cells();
-  /// @brief set initial cells in the system (from input file)
-  void set_ic_cells(string filename);
   
   /// @brief caculates the new cells in the system 
   void  cell_birth(Cell& cell);
@@ -228,24 +197,12 @@ class CoupledModel
   void movement(const Cell& cell, 
 		const int u, const int v, const int w, 
 		const unsigned int cont_cell);
-  void fibre_induced_movement(Cell& cell); // - CICELY NEW
 
   /// @brief calculate contact forces for cells in a given box
   void contact_forces(const int u,
 		      const int v,
 		      const int w,
 		      const unsigned int cells_number);
-
-   /// @brief determines fibres in contact with cells
-  void compute_cell_fibres_contact(const int u,
-		      const int v,
-		      const int w);
-
-  /// @brief determines cells in box [u,v,w] in contact with fibre j
-  void compute_cell_fibres_contact(const int u,
-				   const int v,
-				   const int w,
-				   const int j);
 
   /// @brief determines contact with the cells in box u,v,w
   void compute_cell_cell_contact(const int u, const int v,const int w);
@@ -260,13 +217,6 @@ class CoupledModel
   
   /// @brief compute cell-cell and cell-vessel forces
   void hertz(Cell& cell);
-
-  ///@brief cell velocity correction due to surrounding fibres
-  void cell_fibres_interaction(Cell& cell);
-  void cell_fibres_interaction(Cell& cell, Fibre& fibre); 
-
-  ///@brief set the fibre_exists = 0 if the fibre is damaged
-  void fibre_degradation(Cell& cell, Fibre& fibre, double cell_fibre_min_dist);
   
   // cell-fem coupling
   /// @brief set tetra per box
@@ -297,7 +247,6 @@ class CoupledModel
   */
   void writeVtk(std::string f,unsigned int onlyCoord=0);
   void writeBoxesVtk(string f);
-  void writeFibresVtk(string f);
   void writeVesselsVtk(string f);
   void writeParameterList();
 

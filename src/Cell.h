@@ -1,7 +1,6 @@
 #ifndef _CELL_H_
 #define _CELL_H_
 
-#include "Fibre.h"
 #include "Vessel.h"
 #include <iostream>
 #include <vector>
@@ -31,8 +30,6 @@ class Cell {
   unsigned int mother_name;
   ///@brief time step of birth
   unsigned int birthday;
-
-  
   
   ///@brief current box
   std::vector<int> box; 
@@ -48,17 +45,11 @@ class Cell {
   /// @brief force at current time
   std::vector<double> force;
   
-  /// @brief polarity
-  std::vector<double> polarity;
-  
   ///@brief radius
   double radius;
 
   ///@brief energy
-  double energy; 
-
-  ///@brief how polarised
-  int polarised;
+  double energy;
 
   ///@brief adhesion forces constant
   double adhesion;
@@ -68,7 +59,7 @@ class Cell {
   ///@brief counter of time steps in hypoxia 
   unsigned int hypoxic_count;
   ///@brief continuous phenotype of cell
-  double cont_pheno; //ADDED 25/6/19
+  double cont_pheno;
 
   ///@brief regulates transition normoxic -> hypoxic
   double phenotype; 
@@ -80,9 +71,6 @@ class Cell {
   /// @brief store the neighbors (in contact)
   std::vector<Cell*> neighbors;
 
-  /// @brief store the fibres in contact
-  std::vector<Fibre*> contact_fibres;
-
   /// @brief store the vessels in contact
   std::vector<Vessel*> contact_vessels;
 
@@ -91,9 +79,6 @@ class Cell {
 
   /// @brief phenotype - to decide which variation of parameters to use
   int interaction_phenotype;
-
-  /// @brief is_follower - to decide whether the cell is a follower or a leader cell
-  int is_follower;
   
   ///@brief oxygen concentration and gradient
   double O2,dxO2,dyO2,dzO2;
