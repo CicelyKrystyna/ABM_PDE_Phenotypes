@@ -137,6 +137,7 @@ void Param::readFile(string _file)
   // default: write only cells
   writeVtkCells = ifile("postprocessing/writeVtkCells",1);
   write_cells_frequency = ifile("postprocessing/write_cells_frequency",1);
+  write_boxes_frequency = ifile("postprocessing/write_boxes_frequency",1);
   count_cells_frequency = ifile("postprocessing/count_cells_frequency",1);
   writeCellList = ifile("postprocessing/writeCellList",0);
   writeVtkVessels = ifile("postprocessing/writeVtkVessels",0);
@@ -305,6 +306,7 @@ void Param::print()
   cout << "casedirectory = " << casedirectory << endl;
   cout << "writeVtkCells = " << writeVtkCells << endl;
   cout << "write_cells_frequency = " << write_cells_frequency << endl;
+  cout << "write_boxes_frequency = " << write_boxes_frequency << endl;
   cout << "count_cells_frequency = " << count_cells_frequency << endl;
   cout << "writeVtkVessels = " << writeVtkVessels << endl;
   cout << "writeVtkBoxes = " << writeVtkBoxes << endl;

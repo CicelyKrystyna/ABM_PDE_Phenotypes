@@ -126,6 +126,7 @@ class Param
   string fileCellsTracking;
   int writeVtkCells;
   int write_cells_frequency;
+  int write_boxes_frequency;
   int count_cells_frequency;
   int writeVtkVessels;
   int writeVtkBoxes;

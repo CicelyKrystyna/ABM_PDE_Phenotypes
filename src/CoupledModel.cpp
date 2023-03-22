@@ -301,6 +301,7 @@ void CoupledModel::init(string f)
   /// @brief: cell compressibility: determined from CICELY TO CLARIFY
   double cell_compressibility = params.compressibility;
   this->max_cell_in_box = box_volume/cell_estimated_volume*cell_compressibility;
+  cout << " === box volume: " << box_volume << " cell volume:" << cell_estimated_volume << " " << box_volume/cell_estimated_volume << endl;
   if (params.dimension == 2) this->max_cell_in_box *= 2;
   cout << " === max. number of cell per box allowed: " <<  this->max_cell_in_box << endl;
   this->max_cell = params.max_cell;
@@ -756,7 +757,7 @@ void CoupledModel::cell_birth(Cell& cell){
 
     // TOMMASO FUNCTION
     bool birthconds = false;
-    if (reloj>500) {
+    if (reloj>1000) {
         double x = 1.0 - cell.cont_pheno;
         double f = params.hypoxic_birth * params.time_step * (1.0 - (1.0 - x) * (1.0 - x));
         double g = params.normoxic_birth * params.time_step * (cell.O2 / (cell.O2 + params.oxy_half_sat)) * (1 - x * x);
@@ -852,15 +853,15 @@ void CoupledModel::cell_birth(Cell& cell){
             int c2 = (int) (floor(newpositiony / this->box_sizey));
             int c3 = (int) (floor(newpositionz / this->box_sizez));
 
-            /*if (this->boxes_A[c1][c2][c3].cells.size() >= max_cell_in_box) {
+            if (this->boxes_A[c1][c2][c3].cells.size() >= max_cell_in_box) {
                 cout << " *** WARNING (time step " << reloj
                          << "): !! too many cells !! *** " << endl;
                 cout << " *** in box " << c1 << "," << c2 << "," << c3 << endl;
                 cout << " *** I found " << this->boxes_A[c1][c2][c3].cells.size() << " cells " << endl;
                 cout << " *** (max_cell_in_box = " << max_cell_in_box << ")" << endl;
-                //this->end();
-                //exit(1);
-            }*/
+                this->end();
+                exit(1);
+            }
 
             // ============================
             // create a new cell
@@ -1862,7 +1863,7 @@ void CoupledModel::loop()
             this->writeVesselsVtk(vessels_outputFileName.str());
         }
 
-      if (params.writeVtkBoxes && (this->reloj%500000==0)) {
+      if (params.writeVtkBoxes && (this->reloj%params.write_boxes_frequency==0)) {
           s0 = this->params.outputDirectory + this->params.testcase + "_boxes.";
           std::stringstream boxes_outputFileName;
           boxes_outputFileName << s0  << reloj << ".vtk";
