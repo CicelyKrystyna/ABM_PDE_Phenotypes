@@ -406,8 +406,13 @@ void CoupledModel::set_ic_cells()
   /// @brief counter for dead cells.
   this->total_no_of_removed_cells = 0;
 
+  /// @brief global counter of cells
+  this->cell_id_counter = 0;
+
   //Initialise the boxes cells number:
   for(unsigned int l=0; l < this->total_no_of_cells ; l++) {
+
+      this->cell_id_counter = 0;
 
     /// @brief initial cell position
     cell.position[0]=params.ic_cell_x[l];
@@ -682,7 +687,7 @@ void CoupledModel::checkElementsInBoxes()
    *****************************************************************************  */
 void CoupledModel::cell_mutation(Cell& cell)
 {
-  if (reloj>1000) {
+    if (reloj>2000) {
       double mutation = aleatorio();
       double lambda = params.mutation_probability;
       double nu = params.mutation_amount;
@@ -695,24 +700,14 @@ void CoupledModel::cell_mutation(Cell& cell)
           double pR_mutation = aleatorio();
           if (pR_mutation < pR) cell.cont_pheno = cell.cont_pheno + nu;
           else cell.cont_pheno = cell.cont_pheno - nu;
-      } else cell.cont_pheno = cell.cont_pheno; //cell.type = O2_type;
+      } else cell.cont_pheno = cell.cont_pheno;
 
       // prevent phenotype being outwith [0,1] interval
       if (cell.cont_pheno <= 0.0) cell.cont_pheno = leftside;
       if (cell.cont_pheno >= 1.0) cell.cont_pheno = rightside;
-  }else{
+    }else{
       return;
-  }
-
-  // =================================================================
-  // write cell phenotypes to file
-  // =================================================================
-  //ofstream cellphenotype;
-  //string cell_pheno =  "cell_phenotypes.txt";
-  //cellphenotype.open(cell_pheno.c_str(),ios::app);
-  //cellphenotype << cell.cont_pheno << " " ;
-  //cellphenotype.close();
-  //********************************   
+    }
 }
 
 
@@ -757,12 +752,13 @@ void CoupledModel::cell_birth(Cell& cell){
 
     // TOMMASO FUNCTION
     bool birthconds = false;
-    if (reloj>1000) {
+    if (reloj>2000) {
         double x = 1.0 - cell.cont_pheno;
         double f = params.hypoxic_birth * params.time_step * (1.0 - (1.0 - x) * (1.0 - x));
         double g = params.normoxic_birth * params.time_step * (cell.O2 / (cell.O2 + params.oxy_half_sat)) * (1 - x * x);
         double n = this->boxes_A[bx][by][bz].cells.size();
-        double death_rate = params.death * n; //params.death*pow(5,n);
+        //double death_rate = params.death * n;
+        double death_rate = params.death*pow(5,n);
         double R = f + g - death_rate;
 
         /// @brief cell death
@@ -868,7 +864,8 @@ void CoupledModel::cell_birth(Cell& cell){
             Cell newcell;
             // set the properties of the new cell
             newcell.birthday = this->reloj;
-            newcell.name = this->total_no_of_cells + cells_counter + this->total_no_of_removed_cells;
+            this->cell_id_counter++;
+            newcell.name = this->cell_id_counter;//this->total_no_of_cells + cells_counter + this->total_no_of_removed_cells;
             // counts the number of newborn cells
             cells_counter++;
             newcell.mother_name = cell.name;
@@ -1198,8 +1195,8 @@ void CoupledModel::movement(const Cell& cell,
   if ((celula_nueva.position[0]<0)||(celula_nueva.position[0]>params.lattice_length_x)||
       (celula_nueva.position[1]<0)||(celula_nueva.position[1]>params.lattice_length_y)||
       (celula_nueva.position[2]<0)||(celula_nueva.position[2]>params.lattice_length_z)) {
-      /*cout << " ** (Time " << reloj
-	  << " ) ** WARNING: the new cell created from " << cell.name
+      /* cout << " ** (Time " << reloj
+	  << " ) ** WARNING: cell " << celula_nueva.name
 	  << " is moving out of the domain (not supported) "
 	  << " this cell will no longer be taken into account " << endl;*/
   } else {
@@ -1291,27 +1288,28 @@ void CoupledModel::compute_cell_cell_contact(const int u, const int v,const int 
 
 	             for(unsigned int j=0; j<this->boxes_A[u+h][v+l][w+m].cells.size(); j++) {
 	             // check that we are not looking at the same cell
-	                if(this->boxes_A[u][v][w].cells[i].name !=this->boxes_A[u+h][v+l][w+m].cells[j].name) {	
-		                // compute distance between cells
-		                double cell_cell_min = DISTANCE(this->boxes_A[u][v][w].cells[i],
-					    this->boxes_A[u+h][v+l][w+m].cells[j]); 
-		                double cell_cell_center = this->boxes_A[u+h][v+l][w+m].cells[j].radius +
-		                this->boxes_A[u][v][w].cells[i].radius;
-		
-		                // cells in contact
-		                if(cell_cell_min < cell_cell_center){
-                            // store the pointer to the neighbor cell in the cell. vector
-		                    this->boxes_A[u][v][w].cells[i].neighbors.push_back(&this->boxes_A[u+h][v+l][w+m].cells[j]);   
-		                    // increase number of contacts
-		                    this->boxes_A[u][v][w].cells[i].contacts++;
+	                if(this->boxes_A[u][v][w].cells[i].name !=this->boxes_A[u+h][v+l][w+m].cells[j].name) {
+                        // compute distance between cells
+                        double cell_cell_min = DISTANCE(this->boxes_A[u][v][w].cells[i],
+                                                        this->boxes_A[u + h][v + l][w + m].cells[j]);
+                        double cell_cell_center = this->boxes_A[u + h][v + l][w + m].cells[j].radius +
+                                                  this->boxes_A[u][v][w].cells[i].radius;
 
-		                    if (params.verbose>3) {
-		                        cout << " cell " << this->boxes_A[u][v][w].cells[i].name
-			                    << " in  contact with "
-			                    << this->boxes_A[u+h][v+l][w+m].cells[j].name << endl;
-		                    }
-		                }
-	                }
+                        // cells in contact
+                        if (cell_cell_min < cell_cell_center) {
+                            // store the pointer to the neighbor cell in the cell. vector
+                            this->boxes_A[u][v][w].cells[i].neighbors.push_back(
+                                    &this->boxes_A[u + h][v + l][w + m].cells[j]);
+                            // increase number of contacts
+                            this->boxes_A[u][v][w].cells[i].contacts++;
+
+                            if (params.verbose > 3) {
+                                cout << " cell " << this->boxes_A[u][v][w].cells[i].name
+                                     << " in  contact with "
+                                     << this->boxes_A[u + h][v + l][w + m].cells[j].name << endl;
+                            }
+                        }
+                    }
 	             }
 	        }
 	    }  
@@ -1447,26 +1445,6 @@ void CoupledModel::compare_elements(int u, int v, int w,
         }
     }
   } 
-}
-
-/* ****************************************************************************
-   search in box
-   **************************************************************************** */
-/// @todo write a version search_in_box(Box b, Cell c)
-int CoupledModel::search_in_box(const vector<int>& box_number,
-				const unsigned int cell_name)
-{
-
-  int u=box_number[0];
-  int v=box_number[1];
-  int w=box_number[2];
-  
-  for(unsigned int i=0;i<this->boxes_A[u][v][w].cells.size();i++) {
-    if(cell_name == this->boxes_A[u][v][w].cells[i].name) return i;
-  }
-  cout << "WARNING search_in_box(): cell " << cell_name << " not found in box "
-       << u << "," << v << "," << w << endl;
-  return -1;
 }
 
 /* ****************************************************************************
@@ -1906,6 +1884,7 @@ void CoupledModel::count_cells_per_box()
     for(int l=this->miny; l<=this->maxy; l++){
 	  for(int n=this->minz; n<=this->maxz; n++) {
 	    if (this->boxes_A[k][l][n].cells.size()) {
+
 	        if (params.verbose>1) {
 	            cout << " box [" << k << "," << l << "," << n << "] has " 
 		        << this->boxes_A[k][l][n].cells.size() << " cells " << endl;
@@ -2126,7 +2105,7 @@ void CoupledModel::writeVtk(string filename,unsigned int onlyCoord)
     }
     outfile << endl;
     
-    //write adhesion
+    //write name
     outfile << "SCALARS name double" << endl;
     outfile << "LOOKUP_TABLE default" << endl;
     for(int k=this->minx; k<=this->maxx; k++) {

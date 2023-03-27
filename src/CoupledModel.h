@@ -82,8 +82,10 @@ class CoupledModel
 
   /// @brief total number of cells
   unsigned int total_no_of_cells;
-   /// @brief total number of dead/removed cells // TOMMASO 12/9/19
+   /// @brief total number of dead/removed cells
   unsigned int total_no_of_removed_cells;
+  /// @brief global counter of cells
+  unsigned int cell_id_counter;
   /// @brief max cell number allowed
   unsigned int max_cell;
 
@@ -166,9 +168,6 @@ class CoupledModel
   void phenotype_of_cell(Cell& cell); //TOMMASO
   /// @brief mutate the cell within phenotypic range
   void cell_mutation(Cell& cell); //TOMMASO
-  /// @brief search a cell in a given box (-1: cell not found)
-  int search_in_box(const vector<int>& box_number,
-		    const unsigned int cell_name);// In solve_system
   // @brief revert cell phenotype hypoxic->normoxic (stochastic)
   void reverse_phenotype(Cell& cell);
   
