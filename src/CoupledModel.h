@@ -249,6 +249,9 @@ class CoupledModel
   void writeVesselsVtk(string f);
   void writeParameterList();
 
+  /// @brief write full state (for restarting simulation)
+  void writeFullState(string f);
+
   /// @brief perform final operations
   void end();
 
