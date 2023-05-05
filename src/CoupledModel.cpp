@@ -3,6 +3,7 @@
 #include <sstream>
 #include <math.h>
 #include <list>
+#include <chrono>
 
 /* ****************************************************************************/
 using namespace std;
@@ -310,30 +311,40 @@ void CoupledModel::init(string f)
   this->set_ic_vessels();
 
   cout << " set initial conditions for cells" << endl;
-  // set IC for cells
-  this->set_ic_cells();
+  if (params.readCellState){
+    // read full initial conditions
+    this->readFullState(params.cellStateFile);
+    //this->set_ic_cells();
+  } else {
+    // set IC for cells
+    this->set_ic_cells();
+  }
+  cout << " (start) # of cells total: " << total_no_of_cells << " " << total_no_of_removed_cells << endl;
+
   // updates the maximum value in boxes
   this->update_maximum(); 
   this->update_box();
+  cout << " (start) # of cells total: " << total_no_of_cells << " " << total_no_of_removed_cells << endl;
 
   // print initial configuration on screen
-  if ( this->params.verbose > 0) {
+  if ( this->params.verbose > 0) 
+  {
     cout << " === number of boxes (" 
-	 << params.dimension << "D): " 
-	 << params.boxesx << " x "
-	 << params.boxesy << " x "
-	 << params.boxesz << endl;
+        << params.dimension << "D): " 
+        << params.boxesx << " x "
+        << params.boxesy << " x "
+        << params.boxesz << endl;
 
     cout << " === initial configuration: " << endl;
     for(unsigned int k=0; k<params.boxesx;k++) {
       for(unsigned int l=0; l<params.boxesy;l++) {
-	for(unsigned int n=0; n<params.boxesz;n++) {
-	  if (this->boxes_A[k][l][n].cells.size()>0) {
-	    cout << " -> box " << k << "," << l << "," << n
-		 << ": " << this->boxes_A[k][l][n].cells.size()
-		 << " cell(s) " << endl;
-	  }
-	}
+        for(unsigned int n=0; n<params.boxesz;n++) {
+          if (this->boxes_A[k][l][n].cells.size()>0) {
+            cout << " -> box " << k << "," << l << "," << n
+            << ": " << this->boxes_A[k][l][n].cells.size()
+            << " cell(s) " << endl;
+          }
+	      }
       }
     }	
     cout << endl;
@@ -357,6 +368,7 @@ void CoupledModel::init(string f)
   initial_cells_in_box = 0;
   cells_counter = 0;
   daughter1 = 1;
+  cout << " (start) # of cells total: " << total_no_of_cells << " " << total_no_of_removed_cells << endl;
 }
 
 /* ***************************************************************************
@@ -412,7 +424,7 @@ void CoupledModel::set_ic_cells()
   //Initialise the boxes cells number:
   for(unsigned int l=0; l < this->total_no_of_cells ; l++) {
 
-      this->cell_id_counter = 0;
+    this->cell_id_counter = 0;
 
     /// @brief initial cell position
     cell.position[0]=params.ic_cell_x[l];
@@ -531,6 +543,164 @@ void CoupledModel::set_ic_cells()
   }
 }
 
+/* **************************************************************************
+   place initial cells in the system reading from file
+   ***************************************************************************** */
+void CoupledModel::readFullState(string filename)
+{
+  cout << "CoupledModel::readFullState from file " << filename << endl;
+
+    ifstream file(filename);
+    string line;
+
+    int cell_counter = 0;
+    if (file.is_open()) {
+        while (getline(file, line)) {
+          // read cell data from the file line
+          if (!line.empty() && line[0] != '#') 
+          {
+            cout << line << endl; // process the line
+            stringstream ss(line);
+            unsigned int _global_counter, _name, _mother_name, _birthday;
+            std::vector<int> _box(params.dimension);
+            ss >> _global_counter >> _name >> _mother_name >> _birthday;
+            for (unsigned int b1=0;b1<this->params.dimension;b1++) {
+              ss >> _box[b1]; 
+            }
+            
+            std::vector<double> _position(params.dimension), _vel(params.dimension);
+            for (unsigned int b1=0;b1<this->params.dimension;b1++) {
+              ss >> _position[b1];
+            }
+            for (unsigned int b1=0;b1<this->params.dimension;b1++) {
+              ss >> _vel[b1];
+            }
+            unsigned int _type, _hypoxic_count, _phenotype_counter;
+            double _radius, _energy,  _adhesion,  _cont_pheno, _phenotype;
+            ss >> _radius >> _energy >> _adhesion >> _type >> _hypoxic_count >> _cont_pheno >> _phenotype >> _phenotype_counter;
+
+            double _O2,_dxO2,_dyO2, _dzO2;
+            ss >> _O2 >> _dxO2 >> _dyO2 >> _dzO2;
+
+
+            /*  
+            // checking  
+            cout << " read: " << endl << _name << " " << _mother_name << " " << _birthday;
+            cout << "box: ";
+            for (unsigned int b1=0;b1<this->params.dimension;b1++) {
+              cout << _box[b1] << " ";
+            }
+            cout << endl;
+            cout << "position: ";
+            for (unsigned int b1=0;b1<this->params.dimension;b1++) {
+              cout << _position[b1] << " ";
+            }
+            cout << endl;
+            cout << " ---- " << endl;
+            */
+
+            this->new_maxx = this->maxx;
+            this->new_maxy = this->maxy;
+            if (params.dimension>2) this->new_maxz = this->maxz;
+            
+            this->new_minx = this->minx;
+            this->new_miny = this->miny;
+            if (params.dimension>2) this->new_minz = this->minz;
+
+            cell_counter++;
+            Cell cell;
+            for (unsigned int j=0; j<params.dimension; j++)
+            {
+              cell.position[j]=_position[j];
+              cell.position_old[j]=_position[j];
+              cell.vel[j]=_vel[j];
+            }
+
+            cell.name = _name;
+            cell.contacts = 0; // TO DO: read this from file
+            cell.mother_name = _mother_name;
+            cell.birthday = _birthday;
+            cell.radius = _radius;
+            cell.energy = _energy;
+            cell.type = _type;
+            cell.cont_pheno = _cont_pheno;
+            cell.phenotype_counter = _phenotype_counter;
+            cell.O2 = _O2;
+            cell.dxO2 = _dxO2;
+            cell.dyO2 = _dyO2;
+            cell.dzO2 = _dzO2;
+            cell.phenotype = _phenotype;
+            cell.hypoxic_count = _hypoxic_count;
+            cell.adhesion = _adhesion;
+
+            cell.box[0]=_box[0];
+            cell.box[1]=_box[1];
+            if (params.dimension>2) {
+              cell.box[2]=_box[2];
+            } else {
+              cell.box[2]=0;
+            }
+            int u = _box[0];
+            int v = _box[1];
+            int w = 0;
+            if (params.dimension>2) {
+              w = _box[2];
+            }
+            // check
+            cout << " cell " << cell_counter << " placed in box: " << u << " " << v << " " << w << endl;
+            cout << "        position: " << cell.position[0] << " " << cell.position[1] << " " << cell.position[2] << endl;
+            cout << "        phenotype " << cell.cont_pheno << endl;
+
+            // add cell to boxes
+            this->boxes_A[u][v][w].cells.push_back(cell);
+            this->boxes_new_A[u][v][w].cells.push_back(cell);
+
+            // compute the extrema of occupied boxes
+            if(this->maxx<u && u<(int) params.boxesx) {
+              this->new_maxx=u;	
+            }
+            if(this->maxy<v && v<(int) params.boxesy) {
+              this->new_maxy=v;	
+            }  
+            if(this->maxz<w && w<(int) params.boxesz) {
+              this->new_maxz=w;	
+            }	
+    
+            if(this->minx>u && u>0) {
+              this->new_minx=u;	
+            }
+            if(this->miny>v && v>0) {
+              this->new_miny=v;	
+            }
+            if(this->minz>w && w>0) {
+              this->new_minz=w;	
+            }	
+
+            this->maxx = this->new_maxx;
+            this->maxy = this->new_maxy;
+            if (params.dimension>2) this->maxz = this->new_maxz;
+            
+            this->minx = this->new_minx;
+            this->miny = this->new_miny;
+            if (params.dimension>2) this->minz = this->new_minz;
+
+            
+
+          }
+        }
+        file.close();
+    } else {
+        cout << "Unable to open file";
+    }
+
+    this->total_no_of_removed_cells = 0;
+    this->total_no_of_cells = cell_counter;
+    std::cout << " initialized : " << this->total_no_of_cells << " cells " << endl;
+    std::cout << " box: [" << this->minx << " " << this->maxx << "] x [";
+    std::cout << this->miny << " " << this->maxy << "] " << endl;
+}
+
+
 /* ***************************************************************************
    Place vessels in the system 
    *************************************************************************** */
@@ -596,27 +766,30 @@ void CoupledModel::update_maximum()
    Cleans the elements of the box and update the new cells 
    *************************************************************************** */
 void CoupledModel::update_box(){
+  unsigned int old_n_of_cells = this->total_no_of_cells;
   this->total_no_of_cells = 0;
   
   for(int u=this->minx; u<=this->maxx; u++) {
     for(int v=this->miny; v<=this->maxy; v++) {
       for(int w=this->minz; w<=this->maxz; w++) {
         // clear cell contacts
-	    for(unsigned int j=0; j<this->boxes_new_A[u][v][w].cells.size(); j++)   {
-	        this->boxes_new_A[u][v][w].cells[j].clear_contacts();
-	    }
-	
-	    // boxes.cells = boxes_new.cells
-	    this->boxes_A[u][v][w].cells = this->boxes_new_A[u][v][w].cells;
+        for(unsigned int j=0; j<this->boxes_new_A[u][v][w].cells.size(); j++)   {
+            this->boxes_new_A[u][v][w].cells[j].clear_contacts();
+        }
+    
+        // boxes.cells = boxes_new.cells
+        this->boxes_A[u][v][w].cells = this->boxes_new_A[u][v][w].cells;
+        this->total_no_of_cells += this->boxes_new_A[u][v][w].cells.size();
 
-	    this->total_no_of_cells += this->boxes_new_A[u][v][w].cells.size();
-
-	    // clear new box arrays
-	    this->boxes_new_A[u][v][w].cells.clear();
-	    // new: free also the used memory
-	    vector<Cell> swap(this->boxes_new_A[u][v][w].cells);
+        // clear new box arrays
+        this->boxes_new_A[u][v][w].cells.clear();
+        // new: free also the used memory
+        vector<Cell> swap(this->boxes_new_A[u][v][w].cells);
       }  
     }  
+  }
+  if (this->total_no_of_cells != old_n_of_cells) {
+    std::cout << " ** Warning: total number of cells do not match after update_box()" << endl;
   }
 }
 
@@ -1452,10 +1625,24 @@ void CoupledModel::compare_elements(int u, int v, int w,
    **************************************************************************** */
 void CoupledModel::loop()
 {
+  cout << " (start) # of cells total: " << total_no_of_cells + total_no_of_removed_cells << endl;
   /*
      @todo move this to the init function
      for this, we need to replace fe_mesh with oxy_diff.mesh everywhere
   */
+  cout << " === initial configuration: " << endl;
+  for(unsigned int k=0; k<params.boxesx;k++) {
+    for(unsigned int l=0; l<params.boxesy;l++) {
+      for(unsigned int n=0; n<params.boxesz;n++) {
+        if (this->boxes_A[k][l][n].cells.size()>0) {
+          cout << " -> box " << k << "," << l << "," << n
+               << ": " << this->boxes_A[k][l][n].cells.size()
+              << " cell(s) " << endl;
+	      }
+      }
+    }
+  }
+
   Mesh fe_mesh;    
   if (this->params.femSolverType>0) {
     /// @todo move this part in init() function
@@ -1640,7 +1827,9 @@ void CoupledModel::loop()
         // ********************************
         // Loop of mutation, birth and death
         // ********************************
-        cells_counter=0;  // total number of new cells      
+        cells_counter=0;  // total number of new cells    
+        //std::cout << " box: [" << this->minx << " " << this->maxx << "] x [";
+        //std::cout << this->miny << " " << this->maxy << "] " << endl;
         for(int k=this->minx; k<=this->maxx; k++) {
             for(int l=this->miny; l<=this->maxy; l++) {
 	            for(int n=this->minz; n<=this->maxz; n++) {
@@ -1935,6 +2124,10 @@ void CoupledModel::count_cells_per_type()
    **************************************************************************** */
 void CoupledModel::end()
 {
+  if (params.writeFullState) {
+    this->writeFullState(this->params.outputDirectory + this->params.testcase + ".state");
+  }
+
 
   if (params.getGenealogy) {
     this->gather_all_births();
@@ -1948,12 +2141,17 @@ void CoupledModel::end()
     this->writeVesselsVtk(vessels_outputFileName.str());
   }
 
-  if (params.writeVtkCells==0) {
+  // proposed by ChatGPT
+  if (!params.writeVtkCells) {
+    std::string outputFileName = params.outputDirectory + params.testcase + "_cells." + std::to_string(reloj) + ".vtk";
+    writeVtk(outputFileName);
+  }
+  /*if (params.writeVtkCells==0) {
     s0 = this->params.outputDirectory + this->params.testcase + "_cells.";
     std::stringstream cells_outputFileName;
     cells_outputFileName << s0  << reloj << ".vtk";
     this->writeVtk(cells_outputFileName.str());
-  }
+  }*/
 
   if (params.writeVtkBoxes==0) {
       s0 = this->params.outputDirectory + this->params.testcase + "_boxes.";
@@ -1980,27 +2178,109 @@ void CoupledModel::end()
     // body: x,y,z,type,r,phenotype,adhesion coeff,id,energy
     for(int k=this->minx; k<=this->maxx; k++) {
       for(int l=this->miny; l<=this->maxy; l++){
-	    for(int n=this->minz; n<=this->maxz; n++) {
-	        for(unsigned int i=0; i<this->boxes_A[k][l][n].cells.size(); i++) {
-	            outCellFile << this->boxes_A[k][l][n].cells[i].position[0] << " "
-			    << this->boxes_A[k][l][n].cells[i].position[1] << " "
-			    << this->boxes_A[k][l][n].cells[i].position[2] << " "
-			    << this->boxes_A[k][l][n].cells[i].type << " "
-			    << this->boxes_A[k][l][n].cells[i].radius;
-	            if (params.writeCellList>1) {
-		            outCellFile << " "
-			        << this->boxes_A[k][l][n].cells[i].cont_pheno << " "
-			        << this->boxes_A[k][l][n].cells[i].adhesion << " "
-			        << this->boxes_A[k][l][n].cells[i].name << " "
-			        << this->boxes_A[k][l][n].cells[i].energy;
-	            }
-	            outCellFile << endl;
-	        }
-	    }
+        for(int n=this->minz; n<=this->maxz; n++) {
+          // proposed by ChatGPT
+          for(auto& cell : this->boxes_A[k][l][n].cells) {
+                outCellFile << cell.position[0] << " "
+                            << cell.position[1] << " "
+                            << cell.position[2] << " "
+                            << cell.type << " "
+                            << cell.radius;
+
+                if (params.writeCellList>1) {
+                    outCellFile << " "
+                                << cell.cont_pheno << " "
+                                << cell.adhesion << " "
+                                << cell.name << " "
+                                << cell.energy;
+                }
+
+                outCellFile << endl;
+            }
+
+            /*for(unsigned int i=0; i<this->boxes_A[k][l][n].cells.size(); i++) {
+                outCellFile << this->boxes_A[k][l][n].cells[i].position[0] << " "
+            << this->boxes_A[k][l][n].cells[i].position[1] << " "
+            << this->boxes_A[k][l][n].cells[i].position[2] << " "
+            << this->boxes_A[k][l][n].cells[i].type << " "
+            << this->boxes_A[k][l][n].cells[i].radius;
+                if (params.writeCellList>1) {
+                  outCellFile << " "
+                << this->boxes_A[k][l][n].cells[i].cont_pheno << " "
+                << this->boxes_A[k][l][n].cells[i].adhesion << " "
+                << this->boxes_A[k][l][n].cells[i].name << " "
+                << this->boxes_A[k][l][n].cells[i].energy;
+                }
+                outCellFile << endl;
+            }*/
+        }
       }
     }
     outCellFile.close();
   }   
+}
+
+
+/* ****************************************************************************
+   WRITE ALL CELLS TO FI:E
+   **************************************************************************** */
+void CoupledModel::writeFullState(string filename)
+{
+  cout << "CoupledModel::writeFullState on file " << filename << endl;
+  auto now = std::chrono::system_clock::now();
+  auto date = std::chrono::system_clock::to_time_t(now);
+
+  ofstream outfile(filename.c_str());
+  outfile << "# IB_PDE_MODEL state file" << endl;
+  outfile << "# (use # for header lines)" << endl;
+  outfile << "# time stamp: " << std::ctime(&date) << endl;
+  outfile << "#  " << std::ctime(&date) << endl;
+
+  // loop on boxes
+  unsigned int global_counter = 0;
+  for(int k=this->minx; k<=this->maxx; k++) {
+    for(int l=this->miny; l<=this->maxy; l++){
+      for(int n=this->minz; n<=this->maxz; n++) {
+        // cells in box
+	      for(unsigned int i=0;i<this->boxes_A[k][l][n].cells.size();i++) {
+          outfile << global_counter << " ";
+          global_counter++;
+          cout << "name: " << this->boxes_A[k][l][n].cells[i].name << endl;
+          outfile << this->boxes_A[k][l][n].cells[i].name << " ";
+          outfile << this->boxes_A[k][l][n].cells[i].mother_name << " ";
+          outfile << this->boxes_A[k][l][n].cells[i].birthday << " ";
+          for (unsigned int b1=0;b1<this->params.dimension;b1++) {
+            outfile << this->boxes_A[k][l][n].cells[i].box[b1] << " "; 
+          }
+          //outfile << ", ";
+          for (unsigned int b1=0;b1<this->params.dimension;b1++) {
+            outfile << this->boxes_A[k][l][n].cells[i].position[b1] << " ";
+          }
+          //outfile << endl;
+          for (unsigned int b1=0;b1<this->params.dimension;b1++) {
+            outfile << this->boxes_A[k][l][n].cells[i].vel[b1] << " ";
+          }
+          //outfile << endl;
+          outfile << this->boxes_A[k][l][n].cells[i].radius << " ";
+          outfile << this->boxes_A[k][l][n].cells[i].energy << " ";
+          outfile << this->boxes_A[k][l][n].cells[i].adhesion << " ";
+          outfile << this->boxes_A[k][l][n].cells[i].type << " ";
+          outfile << this->boxes_A[k][l][n].cells[i].hypoxic_count << " ";
+          outfile << this->boxes_A[k][l][n].cells[i].cont_pheno << " ";
+          outfile << this->boxes_A[k][l][n].cells[i].phenotype << " ";
+          outfile << this->boxes_A[k][l][n].cells[i].phenotype_counter << " ";
+
+          outfile << this->boxes_A[k][l][n].cells[i].O2 << " "; 
+          outfile << this->boxes_A[k][l][n].cells[i].dxO2 << " "; 
+          outfile << this->boxes_A[k][l][n].cells[i].dyO2 << " "; 
+          outfile << this->boxes_A[k][l][n].cells[i].dzO2 << " "; 
+          outfile << endl;
+        }
+      }
+    }
+  }
+
+  outfile.close();
 }
 
 /* ****************************************************************************

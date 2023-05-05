@@ -36,6 +36,12 @@ void Param::readFile(string _file)
  
   // [cells] --- cell parameters
   /// @todo change name of initial cell array size
+  readCellState = ifile("cells/readCellState",0);
+  cellStateFile  = "test";
+  if (readCellState) {
+    cellStateFile  = ifile("cells/cellStateFile","test");
+  }
+  
   n_initial_cells  = ifile("cells/n_initial_cells",1);
   n_steps = ifile("cells/n_steps",0);
   time_step = ifile("cells/time_step",1.);
@@ -153,6 +159,7 @@ void Param::readFile(string _file)
   writeStatistics = ifile("postprocessing/writeStatistics",0);
   casename = ifile("postprocessing/casename","case");
   casedirectory = ifile("postprocessing/casedirectory","./");
+  writeFullState = ifile("postprocessing/writeFullState",1);
   
   cout << " --- ... parameters read. " << endl;
 
@@ -183,6 +190,10 @@ void Param::print()
   cout << endl;
 
   cout << "[cells]" << endl;
+  cout << "readCellState = " << readCellState << endl;
+  if (readCellState) {
+    cout << "cellStateFile = '" << cellStateFile << "'" << endl;
+  }
   cout << "n_initial_cells = " << n_initial_cells << endl;
   cout << "n_steps = " << n_steps << endl;
   cout << "time_step = " << time_step << endl;
@@ -314,6 +325,7 @@ void Param::print()
   cout << "writeCellList = " << writeCellList << endl;
   cout << "fileCells = " << fileCells << endl;
   cout << "writeStatistics = " << writeStatistics << endl;
+  cout << "writeFullState = " << writeFullState << endl;
 
   
   cout << endl;

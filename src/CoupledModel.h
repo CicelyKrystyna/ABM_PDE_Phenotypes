@@ -251,6 +251,8 @@ class CoupledModel
 
   /// @brief write full state (for restarting simulation)
   void writeFullState(string f);
+  /// @brief read full state (for restarting simulation)
+  void readFullState(string f);
 
   /// @brief perform final operations
   void end();

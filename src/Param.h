@@ -30,6 +30,8 @@ class Param
   string fileFEM2Cells;
 
   // [cells] --- cell parameters
+  int readCellState;
+  string cellStateFile;
   int n_initial_cells;
   unsigned int n_steps;
   /// @brief cell time step
@@ -134,6 +136,7 @@ class Param
   int writeCellList;
   string fileCells;
   int writeStatistics;
+  int writeFullState;
   
   void readFile(string f);
  
