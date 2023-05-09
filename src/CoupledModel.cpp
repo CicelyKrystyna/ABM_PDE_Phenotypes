@@ -260,6 +260,7 @@ void CoupledModel::init(string f)
 
   // initialize simulation
   this->reloj = 0;
+  this->starting_time = 0;
   // set box size
   this->box_sizex=params.lattice_length_x/(params.boxesx+0.0);
   this->box_sizey=params.lattice_length_y/(params.boxesy+0.0);
@@ -302,7 +303,7 @@ void CoupledModel::init(string f)
   /// @brief: cell compressibility: determined from CICELY TO CLARIFY
   double cell_compressibility = params.compressibility;
   this->max_cell_in_box = box_volume/cell_estimated_volume*cell_compressibility;
-  cout << " === box volume: " << box_volume << " cell volume:" << cell_estimated_volume << " " << box_volume/cell_estimated_volume << endl;
+  cout << " === box volume: " << box_volume << " cell volume:" << cell_estimated_volume << endl;//" " << box_volume/cell_estimated_volume << endl;
   if (params.dimension == 2) this->max_cell_in_box *= 2;
   cout << " === max. number of cell per box allowed: " <<  this->max_cell_in_box << endl;
   this->max_cell = params.max_cell;
@@ -324,7 +325,7 @@ void CoupledModel::init(string f)
   // updates the maximum value in boxes
   this->update_maximum(); 
   this->update_box();
-  cout << " (start) # of cells total: " << total_no_of_cells << " " << total_no_of_removed_cells << endl;
+  cout << " (update box) # of cells total: " << total_no_of_cells << " " << total_no_of_removed_cells << endl;
 
   // print initial configuration on screen
   if ( this->params.verbose > 0) 
@@ -368,7 +369,7 @@ void CoupledModel::init(string f)
   initial_cells_in_box = 0;
   cells_counter = 0;
   daughter1 = 1;
-  cout << " (start) # of cells total: " << total_no_of_cells << " " << total_no_of_removed_cells << endl;
+  //cout << " (start) # of cells total: " << total_no_of_cells << " " << total_no_of_removed_cells << endl;
 }
 
 /* ***************************************************************************
@@ -424,7 +425,7 @@ void CoupledModel::set_ic_cells()
   //Initialise the boxes cells number:
   for(unsigned int l=0; l < this->total_no_of_cells ; l++) {
 
-    this->cell_id_counter = 0;
+    this->cell_id_counter++;
 
     /// @brief initial cell position
     cell.position[0]=params.ic_cell_x[l];
@@ -559,7 +560,7 @@ void CoupledModel::readFullState(string filename)
           // read cell data from the file line
           if (!line.empty() && line[0] != '#') 
           {
-            cout << line << endl; // process the line
+            //cout << line << endl; // process the line
             stringstream ss(line);
             unsigned int _global_counter, _name, _mother_name, _birthday;
             std::vector<int> _box(params.dimension);
@@ -582,6 +583,12 @@ void CoupledModel::readFullState(string filename)
             double _O2,_dxO2,_dyO2, _dzO2;
             ss >> _O2 >> _dxO2 >> _dyO2 >> _dzO2;
 
+            double _reloj;
+            ss >> _reloj;
+
+            // set new start time
+            this->reloj = _reloj;
+            this->starting_time = _reloj;
 
             /*  
             // checking  
@@ -647,9 +654,9 @@ void CoupledModel::readFullState(string filename)
               w = _box[2];
             }
             // check
-            cout << " cell " << cell_counter << " placed in box: " << u << " " << v << " " << w << endl;
-            cout << "        position: " << cell.position[0] << " " << cell.position[1] << " " << cell.position[2] << endl;
-            cout << "        phenotype " << cell.cont_pheno << endl;
+            //cout << " cell " << cell_counter << " placed in box: " << u << " " << v << " " << w << endl;
+            //cout << "        position: " << cell.position[0] << " " << cell.position[1] << " " << cell.position[2] << endl;
+            //cout << "        phenotype " << cell.cont_pheno << endl;
 
             // add cell to boxes
             this->boxes_A[u][v][w].cells.push_back(cell);
@@ -693,8 +700,10 @@ void CoupledModel::readFullState(string filename)
         cout << "Unable to open file";
     }
 
+    cout << " The simulation is started from time " << this->starting_time << endl;
     this->total_no_of_removed_cells = 0;
     this->total_no_of_cells = cell_counter;
+    this->cell_id_counter = cell_counter;
     std::cout << " initialized : " << this->total_no_of_cells << " cells " << endl;
     std::cout << " box: [" << this->minx << " " << this->maxx << "] x [";
     std::cout << this->miny << " " << this->maxy << "] " << endl;
@@ -766,7 +775,7 @@ void CoupledModel::update_maximum()
    Cleans the elements of the box and update the new cells 
    *************************************************************************** */
 void CoupledModel::update_box(){
-  unsigned int old_n_of_cells = this->total_no_of_cells;
+  //unsigned int old_n_of_cells = this->total_no_of_cells;
   this->total_no_of_cells = 0;
   
   for(int u=this->minx; u<=this->maxx; u++) {
@@ -788,9 +797,10 @@ void CoupledModel::update_box(){
       }  
     }  
   }
-  if (this->total_no_of_cells != old_n_of_cells) {
-    std::cout << " ** Warning: total number of cells do not match after update_box()" << endl;
-  }
+  /*if (this->total_no_of_cells != old_n_of_cells) {
+      std::cout << old_n_of_cells << " vs " << this->total_no_of_cells <<std::endl;
+      std::cout << " ** Warning: total number of cells do not match after update_box()" << endl;
+  }*/
 }
 
 /* ***************************************************************************
@@ -1012,9 +1022,9 @@ void CoupledModel::cell_birth(Cell& cell){
         if ((newpositionx < 0) || (newpositionx > params.lattice_length_x) ||
             (newpositiony < 0) || (newpositiony > params.lattice_length_y) ||
             (newpositionz < 0) || (newpositionz > params.lattice_length_z)) {
-            /* cout << " ** (Time " << reloj
+            /*cout << " ** (Time " << reloj
                 << " ) ** !!!!!!!!! WARNING: the new cell created from " << cell.name
-                << " is moving out of the domain (not supported) "
+                << " is born out of the domain (not supported) "
                 << " this cell will no longer be taken into account " << endl;*/
         } else {
             // coordinate of the box of the daughter cell
@@ -1037,8 +1047,8 @@ void CoupledModel::cell_birth(Cell& cell){
             Cell newcell;
             // set the properties of the new cell
             newcell.birthday = this->reloj;
-            this->cell_id_counter++;
             newcell.name = this->cell_id_counter;//this->total_no_of_cells + cells_counter + this->total_no_of_removed_cells;
+            this->cell_id_counter++;
             // counts the number of newborn cells
             cells_counter++;
             newcell.mother_name = cell.name;
@@ -1368,7 +1378,7 @@ void CoupledModel::movement(const Cell& cell,
   if ((celula_nueva.position[0]<0)||(celula_nueva.position[0]>params.lattice_length_x)||
       (celula_nueva.position[1]<0)||(celula_nueva.position[1]>params.lattice_length_y)||
       (celula_nueva.position[2]<0)||(celula_nueva.position[2]>params.lattice_length_z)) {
-      /* cout << " ** (Time " << reloj
+      /*cout << " ** (Time " << reloj
 	  << " ) ** WARNING: cell " << celula_nueva.name
 	  << " is moving out of the domain (not supported) "
 	  << " this cell will no longer be taken into account " << endl;*/
@@ -1625,12 +1635,12 @@ void CoupledModel::compare_elements(int u, int v, int w,
    **************************************************************************** */
 void CoupledModel::loop()
 {
-  cout << " (start) # of cells total: " << total_no_of_cells + total_no_of_removed_cells << endl;
+  cout << " (start of loop) # of cells total: " << total_no_of_cells << " " <<  total_no_of_removed_cells << endl;
   /*
      @todo move this to the init function
      for this, we need to replace fe_mesh with oxy_diff.mesh everywhere
   */
-  cout << " === initial configuration: " << endl;
+  /*cout << " === initial configuration: " << endl;
   for(unsigned int k=0; k<params.boxesx;k++) {
     for(unsigned int l=0; l<params.boxesy;l++) {
       for(unsigned int n=0; n<params.boxesz;n++) {
@@ -1641,7 +1651,7 @@ void CoupledModel::loop()
 	      }
       }
     }
-  }
+  }*/
 
   Mesh fe_mesh;    
   if (this->params.femSolverType>0) {
@@ -1685,21 +1695,21 @@ void CoupledModel::loop()
 
   cout << " ========= " << endl;
   system(" date\n");
-  cout << " starting main loop, end time: " << params.n_steps << endl;
+  cout << " starting main loop, end time: " << this->starting_time+params.n_steps << endl;
   cout << " ========= " << endl;
-  this->reloj=0; // initial time step
+  //this->reloj=0; // initial time step
   
   // ====================
   // MAIN LOOP
   // ====================
   while(this->total_no_of_cells < this->max_cell && 
-	    this->reloj < params.n_steps) {
+	    this->reloj < this->starting_time + params.n_steps) {
 
         ///@todo remove when we have a better measure of density change
         //int n_cells_old = this->total_no_of_cells;
 
         if (this->reloj%params.count_cells_frequency==0) {
-	        cout << " *** time step: " << this->reloj << " (of " << params.n_steps << ") "
+	        cout << " *** time step: " << this->reloj << " (of " << this->starting_time+params.n_steps << ") "
 	        //<< " *** n. of cells: " << this->total_no_of_cells
             //<< " *** n. of dead cells: " << this->total_no_of_removed_cells
             //<< endl;
@@ -2245,7 +2255,7 @@ void CoupledModel::writeFullState(string filename)
 	      for(unsigned int i=0;i<this->boxes_A[k][l][n].cells.size();i++) {
           outfile << global_counter << " ";
           global_counter++;
-          cout << "name: " << this->boxes_A[k][l][n].cells[i].name << endl;
+          //cout << "name: " << this->boxes_A[k][l][n].cells[i].name << endl;
           outfile << this->boxes_A[k][l][n].cells[i].name << " ";
           outfile << this->boxes_A[k][l][n].cells[i].mother_name << " ";
           outfile << this->boxes_A[k][l][n].cells[i].birthday << " ";
@@ -2274,6 +2284,7 @@ void CoupledModel::writeFullState(string filename)
           outfile << this->boxes_A[k][l][n].cells[i].dxO2 << " "; 
           outfile << this->boxes_A[k][l][n].cells[i].dyO2 << " "; 
           outfile << this->boxes_A[k][l][n].cells[i].dzO2 << " "; 
+          outfile << this->reloj << " ";
           outfile << endl;
         }
       }

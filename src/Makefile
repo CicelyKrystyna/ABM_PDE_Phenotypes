@@ -1,5 +1,5 @@
 # define compiler options
-CPP = g++-12
+CPP = g++-11
 CPPFLAGS = -Wall -g -O3 -DEBUG  -fpermissive 
 
 # macros
