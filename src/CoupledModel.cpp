@@ -2179,20 +2179,19 @@ void CoupledModel::end()
     for(int k=this->minx; k<=this->maxx; k++) {
       for(int l=this->miny; l<=this->maxy; l++){
         for(int n=this->minz; n<=this->maxz; n++) {
-          // proposed by ChatGPT
-          for(auto& cell : this->boxes_A[k][l][n].cells) {
-                outCellFile << cell.position[0] << " "
-                            << cell.position[1] << " "
-                            << cell.position[2] << " "
-                            << cell.type << " "
-                            << cell.radius;
+          for(unsigned int i=0; i<this->boxes_A[k][l][n].cells.size(); i++) {
+                outCellFile << this->boxes_A[k][l][n].cells[i].position[0] << " "
+                            << this->boxes_A[k][l][n].cells[i].position[1] << " "
+                            << this->boxes_A[k][l][n].cells[i].position[2] << " "
+                            << this->boxes_A[k][l][n].cells[i].type << " "
+                            << this->boxes_A[k][l][n].cells[i].radius;
 
                 if (params.writeCellList>1) {
                     outCellFile << " "
-                                << cell.cont_pheno << " "
-                                << cell.adhesion << " "
-                                << cell.name << " "
-                                << cell.energy;
+                                << this->boxes_A[k][l][n].cells[i].cont_pheno << " "
+                                << this->boxes_A[k][l][n].cells[i].adhesion << " "
+                                << this->boxes_A[k][l][n].cells[i].name << " "
+                                << this->boxes_A[k][l][n].cells[i].energy;
                 }
 
                 outCellFile << endl;
@@ -2227,8 +2226,8 @@ void CoupledModel::end()
 void CoupledModel::writeFullState(string filename)
 {
   cout << "CoupledModel::writeFullState on file " << filename << endl;
-  auto now = std::chrono::system_clock::now();
-  auto date = std::chrono::system_clock::to_time_t(now);
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+  std::time_t date = std::chrono::system_clock::to_time_t(now);
 
   ofstream outfile(filename.c_str());
   outfile << "# IB_PDE_MODEL state file" << endl;
