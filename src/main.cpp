@@ -51,7 +51,7 @@ int main(int argc, char** const argv)
     }
     m.simulation_id = i_sim;
     // --- MAIN LOOP
-    cout << " (start) # of cells total: " << m.total_no_of_cells + m.total_no_of_removed_cells << endl;
+    //cout << " (start) # of cells total: " << m.total_no_of_cells + m.total_no_of_removed_cells << endl;
   
     m.loop();
   

@@ -108,6 +108,7 @@ class CoupledModel
 
   /// @brief current time step
   unsigned int reloj;
+  unsigned int starting_time;
 
   /// @brief interaction distance
   double epsilon;
