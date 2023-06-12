@@ -22,7 +22,7 @@ double PIG=3.1415926535897932384626433832795;
    2: two values inner circle (25% of max radius) well oxygenated
    3: three values inner circle (25% of max radius) well oxygenated
       intermediate circle (25-50% of max radius) poorly oxygenated
-   4: oxygen changes with radius from centre of the domain (considered 200x200x200)
+   4: oxygen changes dynamically with time and space
    if the type is invalid, the function uses type = 0
 
 */
@@ -66,7 +66,20 @@ double CoupledModel::oxygen_concentration_function(vector<double>& position){
     }
 
     case 4: {
-        double radius_from_centre;
+        double radius_from_p1;
+        radius_from_p1 = (100.0-position[0])*(100.0-position[0])+(100.0-position[1])*(100.0-position[1]);
+        radius_from_p1 = sqrt(radius_from_p1);
+        double radius_from_p2;
+        radius_from_p2 = (300.0-position[0])*(300.0-position[0])+(300.0-position[1])*(300.0-position[1]);
+        radius_from_p2 = sqrt(radius_from_p2);
+        if (radius_from_p1 < 40.0) {
+            return this->params.initial_oxygen[0];
+        } else if (radius_from_p2 < 40.0 && reloj > 5000000) {
+            return this->params.initial_oxygen[0];
+        } else {
+                return this->params.initial_oxygen[1];
+        }
+        /*double radius_from_centre;
         radius_from_centre = (this->params.lattice_length_x/2.0-position[0])*(this->params.lattice_length_x/2.0-position[0])
                 +(this->params.lattice_length_y/2.0-position[1])*(this->params.lattice_length_y/2.0-position[1]);
         radius_from_centre = sqrt(radius_from_centre);
@@ -75,7 +88,7 @@ double CoupledModel::oxygen_concentration_function(vector<double>& position){
             return this->params.initial_oxygen[0] - scaled_radial_distance;
         } else {
             return this->params.initial_oxygen[1];
-        }
+        }*/
     }
     
     default: {
@@ -2206,22 +2219,6 @@ void CoupledModel::end()
 
                 outCellFile << endl;
             }
-
-            /*for(unsigned int i=0; i<this->boxes_A[k][l][n].cells.size(); i++) {
-                outCellFile << this->boxes_A[k][l][n].cells[i].position[0] << " "
-            << this->boxes_A[k][l][n].cells[i].position[1] << " "
-            << this->boxes_A[k][l][n].cells[i].position[2] << " "
-            << this->boxes_A[k][l][n].cells[i].type << " "
-            << this->boxes_A[k][l][n].cells[i].radius;
-                if (params.writeCellList>1) {
-                  outCellFile << " "
-                << this->boxes_A[k][l][n].cells[i].cont_pheno << " "
-                << this->boxes_A[k][l][n].cells[i].adhesion << " "
-                << this->boxes_A[k][l][n].cells[i].name << " "
-                << this->boxes_A[k][l][n].cells[i].energy;
-                }
-                outCellFile << endl;
-            }*/
         }
       }
     }
