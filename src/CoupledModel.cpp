@@ -66,15 +66,20 @@ double CoupledModel::oxygen_concentration_function(vector<double>& position){
     }
 
     case 4: {
+        // 2D CASE
         double radius_from_p1;
-        radius_from_p1 = (100.0-position[0])*(100.0-position[0])+(100.0-position[1])*(100.0-position[1]);
+        //radius_from_p1 = (100.0-position[0])*(100.0-position[0])+(100.0-position[1])*(100.0-position[1]);
+        radius_from_p1 = (200.0-position[0])*(200.0-position[0])+(200.0-position[1])*(200.0-position[1]);
         radius_from_p1 = sqrt(radius_from_p1);
         double radius_from_p2;
-        radius_from_p2 = (300.0-position[0])*(300.0-position[0])+(300.0-position[1])*(300.0-position[1]);
+        //radius_from_p2 = (300.0-position[0])*(300.0-position[0])+(300.0-position[1])*(300.0-position[1]);
+        radius_from_p2 = (600.0-position[0])*(600.0-position[0])+(600.0-position[1])*(600.0-position[1]);
         radius_from_p2 = sqrt(radius_from_p2);
-        if (radius_from_p1 < 40.0) {
+        //if (radius_from_p1 < 40.0) {
+        if (radius_from_p1 < 100.0) {
             return this->params.initial_oxygen[0];
-        } else if (radius_from_p2 < 40.0 && reloj > 5000000) {
+        //} else if (radius_from_p2 < 40.0 && reloj > 1500) {
+        } else if (radius_from_p2 < 100.0 && reloj > 5000000) {
             return this->params.initial_oxygen[0];
         } else {
                 return this->params.initial_oxygen[1];
