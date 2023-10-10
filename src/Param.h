@@ -30,7 +30,8 @@ class Param
   string fileFEM2Cells;
 
   // [cells] --- cell parameters
-  int n_phenotypes;
+  int readCellState;
+  string cellStateFile;
   int n_initial_cells;
   unsigned int n_steps;
   /// @brief cell time step
@@ -40,7 +41,7 @@ class Param
   /// @brief cell initial radius [micron]
   double radius;
   /// @brief growth_rate;
-  vector<double> growth_rate;
+  double growth_rate;
   /// @brief birth_rate;
   //double birth_rate;
   /// @brief alternative Birth Rate vector for array of different birth rates
@@ -54,89 +55,28 @@ class Param
   /// @brief contact inhibition
   double contact_inhibition;
   /// @brief Young modulus [kPa*muN/mu m^2]
-  //double YoungM;
-  /// @brief alternative YoungM vector for array of different Young's moduli
-  vector<double> alpha_YoungM;
+  double YoungM;
   /// @brief Poisson modulus
-  //double PoissonNo;
-  /// @brief alternative PoissonNo vector for array of different poisson numbers
-  vector<double> alpha_PoissonNo;
+  double PoissonNo;
   /// @brief tissue viscosity
   double Gcm;
-  /// @brief factor to multiply GCM
-  vector<double> alpha_gcm;
   /// @brief adhesion values
-  vector<double> adhesion_value;
+  double adhesion_value;
   double variance_motion;
-  double variance_phenotype;
-  double variance_adhesion;
   /// @brief birth energy function
   double be_displacement;
   double be_multiplier;
-  /// @brief initial value of the phenotype
-  vector<int> ic_phenotype;
-  vector<double> polarity_x;
-  vector<double> polarity_y;
-  vector<double> polarity_z;
-  // @brief whether the cell is initially a follower or a leader
-  vector<int> ic_follower_leader;
-  /// @brief follower force
-  double follower_force;
-  double follower_denominator;
 
-  // [mutations] TOMMASO
+  // [mutations]
   double initial_phenotype;
   double mutation_amount;
   double mutation_probability;
-  double alpha_s;
     
   // [oxygen] --- pde (oxygen)
   int initial_concentration_function_type;
-  double initial_oxygen;
+  vector<double> initial_oxygen;
   double oxygen_response;
-  double threshold_hypo;
-  /// @brief threshold hypo->death
-  float threshold_death;
-
-  // [fibres] --- fibre parameters
-  unsigned int n_sub_domain;
-  vector<double> x_start, x_end;
-  /// @brief number of fibres to be created within the domain
-  vector<int> n_initial_fibres;
-  /// @brief number of sub_domains
-  //int sub_domains;
-  /// @brief type of fibre distibution  0=uniform 1=normal
-  vector<int> fibre_orientation_distribution;
-  /// @brief mean azimuth angle
-  vector<double> fibre_orientation_mean_phi;
-  /// @brief variance of azimuth angle
-  vector<double> fibre_orientation_variance_phi;
-  /// @brief mean elevation angle
-  vector<double> fibre_orientation_mean_theta;
-  /// @brief variance of elevation angle
-  vector<double> fibre_orientation_variance_theta;
-  /// @brief mean length
-  vector<double> fibre_length_mean;
-  /// @brief variance of length
-  vector<double> fibre_length_variance;
-  /// @brief fibre radius
-  double fibre_radius;
-  /// @brief do we want a gap around cell  0=no 1=yes
-  int fibre_make_gap;
-  /// @brief do we want fibres in different parts of the domain to have different properties 0=n 1=yes
-  //int fibre_split_domain;
-  /// @brief coefficient multiplier for velocity update due to adhesion
-  double vel_adhesion;
-  /// @brief coefficient multiplier for velocity update due to contact
-  double vel_contact;
-  /// @brief fibre_degradation swtich 0=off 1=on
-  int fib_deg;
-  /// @brief probability of fibre degradation due to cell
-  int prob_cell_deg;
-  /// @brief probability of fibre degradation due to diffusion
-  int prob_diff_deg;
-
-
+  double oxy_half_sat;
 
   // [vessels] --- vessel parameters
   /// @brief number of vessels
@@ -187,13 +127,16 @@ class Param
   int cellTracking;
   string fileCellsTracking;
   int writeVtkCells;
-  int writeVtkFibres; 
+  int write_cells_frequency;
+  int write_boxes_frequency;
+  int count_cells_frequency;
   int writeVtkVessels;
   int writeVtkBoxes;
   int getGenealogy;
   int writeCellList;
   string fileCells;
   int writeStatistics;
+  int writeFullState;
   
   void readFile(string f);
  

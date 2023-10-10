@@ -36,81 +36,47 @@ void Param::readFile(string _file)
  
   // [cells] --- cell parameters
   /// @todo change name of initial cell array size
-  n_initial_cells  = ifile("cells/n_initial_cells",1);
-
-   cout << " HERE " << endl;
-  n_phenotypes = ifile("cells/n_phenotypes",1);
+  readCellState = ifile("cells/readCellState",0);
+  cellStateFile  = "test";
+  if (readCellState) {
+    cellStateFile  = ifile("cells/cellStateFile","test");
+  }
   
-  n_steps = ifile("cells/n_steps",0); 
-  //_space_scale = ifile("cells/space_scale",1.);
+  n_initial_cells  = ifile("cells/n_initial_cells",1);
+  n_steps = ifile("cells/n_steps",0);
   time_step = ifile("cells/time_step",1.);
   time_death = ifile("cells/time_death",2880.);
-  cout << " HERE " << endl;
   radius = ifile("cells/radius", 5.0);
-  // parameters for more than one phenotype
-  growth_rate.resize(n_phenotypes);
-  cout << " HERE " << endl;
-  alpha_birthrate.resize(n_phenotypes);
-  alpha_YoungM.resize(n_phenotypes);
-  alpha_PoissonNo.resize(n_phenotypes);
-  alpha_gcm.resize(n_phenotypes);
-  adhesion_value.resize(n_phenotypes);
-
   Gcm = ifile("cells/Gcm",0.01);
-  // alternative growth rate (two phenotypes)
-  for (int k=0; k<n_phenotypes; k++) {
-    growth_rate[k] = ifile("cells/growth_rate",0.1,k);
-    alpha_birthrate[k] = ifile("cells/alpha_birthrate",1e-3,k); 
-    alpha_YoungM[k] = ifile("cells/alpha_YoungM",1e-3,k);
-    alpha_PoissonNo[k] = ifile("cells/alpha_PoissonNo",.5,k);
-    alpha_gcm[k] = ifile("cells/alpha_gcm",1.,k);
-    adhesion_value[k] = ifile("cells/adhesion_value",3.72e-4,k);
-  }
+  growth_rate = ifile("cells/growth_rate",0.1);
+  YoungM = ifile("cells/YoungM",1e-3);
+  PoissonNo = ifile("cells/PoissonNo",.5);
+  adhesion_value = ifile("cells/adhesion_value",3.72e-4);
 
   compressibility = ifile("cells/compressibility", 1.0);
-  contact_inhibition = ifile("cells/contact_inhibition",8.);
+  contact_inhibition = ifile("cells/contact_inhibition",16.);
   // birth energy parameters
   hypoxic_birth = ifile("cells/hypoxic_birth",6.0e-5); // TOMMASO
   normoxic_birth = ifile("cells/normoxic_birth",6.0e-4); // TOMMASO
   death = ifile("cells/death",0.0); // TOMMASO
   hypoxic_friction = ifile("cells/hypoxic_friction",1.0); // TOMMASO
   be_displacement = ifile("cells/be_displacement",1.5);
-  be_multiplier = ifile("cells/be_multiplier",2.0);
+  be_multiplier = ifile("cells/be_multiplier",12.0);
   variance_motion = ifile("cells/variance_motion",4e-3);
-  variance_phenotype = ifile("cells/variance_phenotype",0.);
-  variance_adhesion = ifile("cells/variance_adhesion",0.);
-  polarity_x.resize(n_initial_cells);
-  polarity_y.resize(n_initial_cells);
-  polarity_z.resize(n_initial_cells);
-  ic_phenotype.resize(n_initial_cells);
-  ic_follower_leader.resize(n_initial_cells);
- 
-  for (int i=0; i<n_initial_cells; i++) {
-    polarity_x[i] = ifile("cells/polarity_x",0.,i);
-    polarity_y[i] = ifile("cells/polarity_y",0.,i);
-    if (dimension == 3) {
-      polarity_z[i] = ifile("cells/polarity_z",0.,i);
-    } else {
-      polarity_z[i] = 0.;
-    }
-    ic_phenotype[i] = ifile("cells/ic_phenotype",0,i);
-    ic_follower_leader[i] = ifile("cells/ic_follower_leader",1,i);
-  }
-  follower_force = ifile("cells/follower_force",0.);
-  follower_denominator = ifile("cells/follower_denominator",0.);
 
   // [mutations]
   initial_phenotype = ifile("mutations/initial_phenotype",0.0);
   mutation_amount = ifile("mutations/mutation_amount",0.05);
   mutation_probability = ifile("mutations/mutation_probability",0.01);
-  alpha_s = ifile("mutations/alpha_s",1.5);
 
   // [oxygen]
-  initial_oxygen = ifile("oxygen/initial_oxygen",100.0);
+  initial_oxygen.resize(3);
+  for (int i=0; i<3; i++) {
+      initial_oxygen[i] = ifile("oxygen/initial_oxygen", 60.0, i);
+  }
   oxygen_response = ifile("oxygen/oxygen_response",.0);
-  threshold_death = ifile("oxygen/threshold_death",.7);
-  threshold_hypo = ifile("oxygen/threshold_hypo",7.);
   initial_concentration_function_type = ifile("oxygen/initial_concentration_function_type",0.0);
+  oxy_half_sat = ifile("oxygen/oxy_half_sat",2.5);
 
   // [fem] --- pde (oxygen)
   femSolverType = ifile("fem/femSolverType",0);
@@ -146,61 +112,6 @@ void Param::readFile(string _file)
     }
   }
   max_cell = ifile("geo/max_cell",100000.);
- 
-
-  // [fibres] --- fibre parameters
-  ///@todo support general number of subdomains
-  n_sub_domain = 1;
-  ///@todo make this parameters more general
-  x_start.resize(n_sub_domain);
-  x_end.resize(n_sub_domain);
-
-  x_start[0] = 0.0;
-  x_end[0] = lattice_length_x;
-  
-  if (n_sub_domain == 2) {
-    x_start[1] = lattice_length_x/2.0;
-    x_end[0] = lattice_length_x/2.0;
-    x_end[1] = lattice_length_x;
-  }
-      
-  n_initial_fibres.resize(2);
-  fibre_orientation_distribution.resize(2);
-  fibre_orientation_mean_phi.resize(2);
-  fibre_orientation_variance_phi.resize(2);
-  fibre_orientation_mean_theta.resize(2);
-  fibre_orientation_variance_theta.resize(2);
-  fibre_length_mean.resize(2);
-  fibre_length_variance.resize(2);
-  for (unsigned int i=0; i<2; i++) {
-    n_initial_fibres[i] =  ifile("fibres/n_initial_fibres",0,i);
-    fibre_orientation_distribution[i] =
-      ifile("fibres/fibre_orientation_distribution",0,i);
-    fibre_orientation_mean_phi[i] =
-      ifile("fibres/fibre_orientation_mean_phi",PI_val,i);
-    fibre_orientation_variance_phi[i] =
-      ifile("fibres/fibre_orientation_variance_phi",1.,i);
-    fibre_orientation_mean_theta[i] =
-      ifile("fibres/fibre_orientation_mean_theta",PI_val,i);    
-    fibre_orientation_variance_theta[i] =
-      ifile("fibres/fibre_orientation_variance_theta",1.,i);
-    if (dimension==2) {
-      fibre_orientation_mean_theta[i] = PI_val/2.;
-      fibre_orientation_variance_theta[i] = 0.;
-    }
-    fibre_length_mean[i] =  ifile("fibres/fibre_length_mean",50.,i);
-    fibre_length_variance[i] =  ifile("fibres/fibre_length_variance",2.,i);
-  }
-  
-  fibre_radius = ifile("fibres/fibre_radius",0.2);
-  fibre_make_gap = ifile("fibres/fibre_make_gap",0);
-  vel_adhesion = ifile("fibres/vel_adhesion",0.);
-  vel_contact = ifile("fibres/vel_contact",0.);
-  fib_deg = ifile("fibres/fib_deg",1);
-  prob_cell_deg = ifile("fibres/prob_cell_deg",1e-3);
-  prob_diff_deg = ifile("fibres/prob_diff_deg",1e-6);
-  cout <<  " -- " << endl;
-
 
   // [vessels] --- vessel parameters
   n_initial_vessels = ifile("vessels/n_initial_vessels",0);
@@ -231,8 +142,10 @@ void Param::readFile(string _file)
   verbose = ifile("postprocessing/verbose",1);
   // default: write only cells
   writeVtkCells = ifile("postprocessing/writeVtkCells",1);
+  write_cells_frequency = ifile("postprocessing/write_cells_frequency",1);
+  write_boxes_frequency = ifile("postprocessing/write_boxes_frequency",1);
+  count_cells_frequency = ifile("postprocessing/count_cells_frequency",1);
   writeCellList = ifile("postprocessing/writeCellList",0);
-  writeVtkFibres = ifile("postprocessing/writeVtkFibres",0);
   writeVtkVessels = ifile("postprocessing/writeVtkVessels",0);
   writeVtkBoxes = ifile("postprocessing/writeVtkBoxes",0);
   getGenealogy = ifile("postprocessing/getGenealogy",0);
@@ -246,6 +159,7 @@ void Param::readFile(string _file)
   writeStatistics = ifile("postprocessing/writeStatistics",0);
   casename = ifile("postprocessing/casename","case");
   casedirectory = ifile("postprocessing/casedirectory","./");
+  writeFullState = ifile("postprocessing/writeFullState",1);
   
   cout << " --- ... parameters read. " << endl;
 
@@ -276,79 +190,27 @@ void Param::print()
   cout << endl;
 
   cout << "[cells]" << endl;
+  cout << "readCellState = " << readCellState << endl;
+  if (readCellState) {
+    cout << "cellStateFile = '" << cellStateFile << "'" << endl;
+  }
   cout << "n_initial_cells = " << n_initial_cells << endl;
-  cout << "n_phenotypes = " << n_phenotypes << endl;
   cout << "n_steps = " << n_steps << endl;
   cout << "time_step = " << time_step << endl;
   cout << "time_death = " << time_death << endl;
   cout << "radius = " << radius << endl;
   cout << "compressibility = " << compressibility << endl;
   cout << "contact_inhibition = " << contact_inhibition << endl;
-  cout << "growth_rate = '";
-  for (int i=0; i<n_phenotypes; i++) {
-    cout << growth_rate[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "alpha_birthrate = '";
-  for (int i=0; i<n_phenotypes; i++) {
-    cout << alpha_birthrate[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "alpha_YoungM = '";
-  for (int i=0; i<n_phenotypes; i++) {
-    cout << alpha_YoungM[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "alpha_PoissonNo = '";
-  for (int i=0; i<n_phenotypes; i++) {
-    cout <<alpha_PoissonNo[i] << " ";
-  }
-  cout << "'" << endl;
+  cout << "growth_rate = " << growth_rate << endl;
+  cout << "YoungM = " << YoungM << endl;
+  cout << "PoissonNo = " << PoissonNo << endl;
   cout << "Gcm = " << Gcm << endl;
-  cout << "alpha_gcm = '";
-  for (int i=0; i<n_phenotypes; i++) {
-    cout << alpha_gcm[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "adhesion_value = '";
-  for (int i=0; i<n_phenotypes; i++) {
-    cout << adhesion_value[i] << " ";
-  }
-  cout << "'" << endl;
+  cout << "adhesion_value = " << adhesion_value << endl;
   cout << "variance_motion = " << variance_motion << endl;
-  cout << "variance_phenotype = " << variance_phenotype << endl;
-  cout << "variance_adhesion = " << variance_adhesion << endl;
-  cout << "ic_phenotype = '";
-  for (int i=0; i<n_initial_cells; i++) {
-    cout << ic_phenotype[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "polarity_x = '";
-  for (int i=0; i<n_initial_cells; i++) {
-    cout << polarity_x[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "polarity_y = '";
-  for (int i=0; i<n_initial_cells; i++) {
-    cout << polarity_y[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "polarity_z = '";
-  for (int i=0; i<n_initial_cells; i++) {
-    cout << polarity_z[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "ic_follower_leader = '";
-  for (int i=0; i<n_initial_cells; i++) {
-    cout << ic_follower_leader[i] << " ";
-  }
-  cout << "'" << endl;
   cout << "hypoxic_birth = " << hypoxic_birth << endl;
   cout << "normoxic_birth = " << normoxic_birth << endl;
   cout << "death = " << death << endl;
   cout << "hypoxic_fiction = " << hypoxic_friction << endl;
-  cout << "follower_force = " << follower_force << endl;
-  cout << "follower_denominator = " << follower_denominator << endl;
   cout << "be_multiplier = " << be_multiplier << endl;
   cout << "be_displacement = " << be_displacement << endl;
   cout << endl;
@@ -357,35 +219,17 @@ void Param::print()
   cout << "initial_phenotype = " << initial_phenotype << endl;
   cout << "mutation_amount = " << mutation_amount << endl;
   cout << "mutation_probability = " << mutation_probability << endl;
-  cout << "alpha_s = " << alpha_s << endl;
   cout << endl;
   
   cout << "[oxygen]" << endl;
-  cout << "initial_oxygen = " << initial_oxygen << endl;
-  cout << "oxygen_response = " << oxygen_response << endl;
-  cout << "threshold_death = " << threshold_death << endl;
-  cout << "threshold_hypo = " << threshold_hypo << endl;
-  cout << endl;
-
-  cout << "[fibres]" << endl;
-  cout << "n_initial_fibres = '";
-  for (unsigned int i=0; i<n_initial_fibres.size(); i++) {
-    cout << n_initial_fibres[i] << " ";
+  cout << "initial oxygen = '";
+  for (int i=0; i<3; i++) {
+      cout << initial_oxygen[i] << " ";
   }
   cout << "'" << endl;
-  
-  cout << "fibre_orientation_distribution = '" << fibre_orientation_distribution[0] << " " << fibre_orientation_distribution[1] << "'" << endl;
-  cout << "fibre_orientation_mean_phi = '" << fibre_orientation_mean_phi[0] << " " << fibre_orientation_mean_phi[1] << "'" << endl;
-  cout << "fibre_orientation_variance_phi = '" << fibre_orientation_variance_phi[0] << " " << fibre_orientation_variance_phi[1] << "'" << endl;
-  cout << "fibre_orientation_mean_theta = '" << fibre_orientation_mean_theta[0] << " " << fibre_orientation_mean_theta[1] << "'" << endl;
-  cout << "fibre_orientation_variance_theta = '" << fibre_orientation_variance_theta[0] << " " << fibre_orientation_variance_theta[1]  << "'" << endl;
-  cout << "fibre_length_mean = '" << fibre_length_mean[0] << " " << fibre_length_mean[1] << "'" << endl;
-  cout << "fibre_length_variance = '" << fibre_length_variance[0] << " " << fibre_length_variance[1] << "'" << endl;
-  cout << "fibre_radius = " << fibre_radius << endl;
-  cout << "fibre_make_gap = " << fibre_make_gap << endl;
-  cout << "vel_adhesion = " << vel_adhesion << endl;
-  cout << "vel_contact = " << vel_contact << endl;
-  cout << "fib_deg = " << fib_deg << endl;
+  cout << "initial_concentration_function_type = " << initial_concentration_function_type << endl;
+  cout << "oxy_half_sat = " << oxy_half_sat << endl;
+  cout << "oxygen_response = " << oxygen_response << endl;
   cout << endl;
 
   cout << "[vessels]" << endl;
@@ -472,13 +316,16 @@ void Param::print()
   cout << "outputDirectory = " << outputDirectory << endl;
   cout << "casedirectory = " << casedirectory << endl;
   cout << "writeVtkCells = " << writeVtkCells << endl;
-  cout << "writeVtkFibres = " << writeVtkFibres << endl;
+  cout << "write_cells_frequency = " << write_cells_frequency << endl;
+  cout << "write_boxes_frequency = " << write_boxes_frequency << endl;
+  cout << "count_cells_frequency = " << count_cells_frequency << endl;
   cout << "writeVtkVessels = " << writeVtkVessels << endl;
   cout << "writeVtkBoxes = " << writeVtkBoxes << endl;
   cout << "getGenealogy = " << getGenealogy << endl;
   cout << "writeCellList = " << writeCellList << endl;
   cout << "fileCells = " << fileCells << endl;
   cout << "writeStatistics = " << writeStatistics << endl;
+  cout << "writeFullState = " << writeFullState << endl;
 
   
   cout << endl;

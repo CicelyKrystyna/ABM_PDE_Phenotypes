@@ -16,7 +16,7 @@ EXEC=cell++
 
 # input
 INPUT=main.cpp \
-	CoupledModel.cpp Fibre.cpp Cell.cpp Vessel.cpp \
+	CoupledModel.cpp Cell.cpp Vessel.cpp \
 	PDE.cpp  Param.cpp Mesh.cpp
 
 

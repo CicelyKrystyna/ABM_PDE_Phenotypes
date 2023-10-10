@@ -1,6 +1,6 @@
 func int writeBBfiles(string fname, real[int] & PP, real[int] & U1, real[int] & U2)
 {
-cout << " [postprocessing] writing output (bb files) to " << fname << endl;
+//cout << " [postprocessing] writing output (bb files) to " << fname << endl;
 ofstream fileV(fname+"_vel.bb");
 // <dimensione spazio> <numero di campi> <numero di valori> <tipo di info>.
 fileV << "2 2 "<< U1.n << " 2 \n"; 
@@ -82,7 +82,7 @@ func int postproc2d (real[int] & u0,real[int] & velocity,mesh & T,string text)
 func int postproc3d (real[int] & u0,real[int] & velocity,mesh3 & T,string text)
 {
 
-	cout << " [postprocesing] write vtk on " + text << endl;
+	//cout << " [postprocesing] write vtk on " + text << endl;
  ofstream fii(text);
  //va bene solo per i P1
  int ntet=T.nt;
@@ -249,7 +249,7 @@ outfile << endl;
 func int postproc3dP0 (real[int] & u0,mesh3 & T,string fieldname,string text)
 {
 
-	cout << " [postprocesing] write vtk on " + text << endl;
+	//cout << " [postprocesing] write vtk on " + text << endl;
  ofstream fii(text);
  //va bene solo per i P1
 
