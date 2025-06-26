@@ -6,7 +6,7 @@ CPPFLAGS = -Wall -g -O3 -DEBUG  -fpermissive
 RM = rm -f
 
 # libraries
-LDFLAGS = 
+LDFLAGS =
 
 # paths to include files (out of current directory)
 INCLUDES =

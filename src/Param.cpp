@@ -30,7 +30,6 @@ void Param::readFile(string _file)
 
   // [coupling]
   fileCells2FEM = ifile("coupling/fileCells2FEM", "cells.txt");
-  cout << "fileCells2FEM = " << fileCells2FEM << endl;
   fileCellsDensity2FEM = ifile("coupling/fileCellsDensity2FEM","cell_density.txt");
   fileFEM2Cells = ifile("coupling/fileFEM2Cells","concentration_O2.txt");
   
