@@ -5,6 +5,7 @@ Class for input parameters
 #include <string.h>
 #include <iostream>
 #include <fstream>
+#include "ParameterReader.h"
 #include "Param.h"
 
 using namespace std;
@@ -23,6 +24,19 @@ void Param::readFile(string _file)
     exit(1);
   }
    
+
+  ParameterReader reader;
+  reader.read(_file);
+
+  std::string meshname = reader.getString("fem", "meshname");
+  double death_rate = reader.getDouble("cells", "death");
+  int steps = reader.getInt("cells", "n_steps");
+
+  std::cout << "Mesh file: " << meshname << "\n";
+  std::cout << "Death rate: " << death_rate << "\n";
+  std::cout << "Steps: " << steps << "\n";
+  exit(1);
+
   GetPot ifile(_file.c_str());
 
   // read input
@@ -30,6 +44,7 @@ void Param::readFile(string _file)
 
   // [coupling]
   fileCells2FEM = ifile("coupling/fileCells2FEM", "cells.txt");
+  //fileCells2FEM = reader.getString("coupling","fileCells2FEM");
   cout << "fileCells2FEM = " << fileCells2FEM << endl;
   fileCellsDensity2FEM = ifile("coupling/fileCellsDensity2FEM","cell_density.txt");
   fileFEM2Cells = ifile("coupling/fileFEM2Cells","concentration_O2.txt");

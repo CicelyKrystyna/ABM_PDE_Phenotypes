@@ -17,7 +17,7 @@ EXEC=cell++
 # input
 INPUT=main.cpp \
 	CoupledModel.cpp Cell.cpp Vessel.cpp \
-	PDE.cpp  Param.cpp Mesh.cpp
+	PDE.cpp  Param.cpp Mesh.cpp ParameterReader.cpp
 
 
 DIRS := ./
