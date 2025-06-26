@@ -63,6 +63,29 @@ double ParameterReader::getDouble(const std::string& section, const std::string&
     return hasKey(section, key) ? std::stod(data.at(section).at(key)) : defaultValue;
 }
 
+std::vector<double> ParameterReader::getDoubleList(const std::string& section, const std::string& key, const std::vector<double>& defaults){
+    if (!hasKey(section, key)) {
+        return defaults;
+    }
+
+    std::string value = data.at(section).at(key); // raw string: "1.0, 2.5, 3.8"
+    std::vector<double> result;
+    std::stringstream ss(value);
+    std::string item;
+
+    while (std::getline(ss, item, ',')) {
+        try {
+            result.push_back(std::stod(item));
+        } catch (...) {
+            // fallback to 0.0 or throw exception if preferred
+            result.push_back(0.0);
+        }
+    }
+
+    return result.empty() ? defaults : result;
+}
+
+
 bool ParameterReader::hasKey(const std::string& section, const std::string& key) const {
     return data.count(section) && data.at(section).count(key);
 }

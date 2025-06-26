@@ -28,160 +28,135 @@ void Param::readFile(string _file)
   ParameterReader reader;
   reader.read(_file);
 
-  std::string meshname = reader.getString("fem", "meshname");
-  double death_rate = reader.getDouble("cells", "death");
-  int steps = reader.getInt("cells", "n_steps");
-
-  std::cout << "Mesh file: " << meshname << "\n";
-  std::cout << "Death rate: " << death_rate << "\n";
-  std::cout << "Steps: " << steps << "\n";
-  string test_input = reader.getString("coupling","fileCells2FEM","cells.txt");
-  std::cout << "File: " << test_input << "\n";
-  exit(1);
-
   GetPot ifile(_file.c_str());
 
   // read input
   cout << " --- read file (GetPot) " << _file << endl;
 
   // [coupling]
-  fileCells2FEM = ifile("coupling/fileCells2FEM", "cells.txt");
-  cout << "fileCells2FEM = " << fileCells2FEM << endl;
-  fileCellsDensity2FEM = ifile("coupling/fileCellsDensity2FEM","cell_density.txt");
-  fileFEM2Cells = ifile("coupling/fileFEM2Cells","concentration_O2.txt");
-  
+  std::string fileCells2FEM = reader.getString("coupling", "fileCells2FEM", "cells.txt");
+  std::string fileCellsDensity2FEM = reader.getString("coupling", "fileCellsDensity2FEM", "cell_density.txt");
+  std::string fileFEM2Cells = reader.getString("coupling", "fileFEM2Cells", "concentration_O2.txt");
  
   // [cells] --- cell parameters
-  /// @todo change name of initial cell array size
-  readCellState = ifile("cells/readCellState",0);
-  cellStateFile  = "test";
+  int readCellState = reader.getInt("cells", "readCellState", 0);
+  std::string cellStateFile = "test";
   if (readCellState) {
-    cellStateFile  = ifile("cells/cellStateFile","test");
+  cellStateFile = reader.getString("cells", "cellStateFile", "test");
   }
-  
-  n_initial_cells  = ifile("cells/n_initial_cells",1);
-  n_steps = ifile("cells/n_steps",0);
-  time_step = ifile("cells/time_step",1.);
-  time_death = ifile("cells/time_death",2880.);
-  radius = ifile("cells/radius", 5.0);
-  Gcm = ifile("cells/Gcm",0.01);
-  growth_rate = ifile("cells/growth_rate",0.1);
-  YoungM = ifile("cells/YoungM",1e-3);
-  PoissonNo = ifile("cells/PoissonNo",.5);
-  adhesion_value = ifile("cells/adhesion_value",3.72e-4);
+  int n_initial_cells = reader.getInt("cells", "n_initial_cells", 1);
+  int n_steps = reader.getInt("cells", "n_steps", 0);
+  double time_step = reader.getDouble("cells", "time_step", 1.0);
+  double time_death = reader.getDouble("cells", "time_death", 2880.0);
+  double radius = reader.getDouble("cells", "radius", 5.0);
+  double Gcm = reader.getDouble("cells", "Gcm", 0.01);
+  double growth_rate = reader.getDouble("cells", "growth_rate", 0.1);
+  double YoungM = reader.getDouble("cells", "YoungM", 1e-3);
+  double PoissonNo = reader.getDouble("cells", "PoissonNo", 0.5);
+  double adhesion_value = reader.getDouble("cells", "adhesion_value", 3.72e-4);
+  double compressibility = reader.getDouble("cells", "compressibility", 1.0);
+  double contact_inhibition = reader.getDouble("cells", "contact_inhibition", 16.0);
+  double death_rate = reader.getDouble("cells", "death");
 
-  compressibility = ifile("cells/compressibility", 1.0);
-  contact_inhibition = ifile("cells/contact_inhibition",16.);
   // birth energy parameters
-  hypoxic_birth = ifile("cells/hypoxic_birth",6.0e-5); // TOMMASO
-  normoxic_birth = ifile("cells/normoxic_birth",6.0e-4); // TOMMASO
-  death = ifile("cells/death",0.0); // TOMMASO
-  hypoxic_friction = ifile("cells/hypoxic_friction",1.0); // TOMMASO
-  be_displacement = ifile("cells/be_displacement",1.5);
-  be_multiplier = ifile("cells/be_multiplier",12.0);
-  variance_motion = ifile("cells/variance_motion",4e-3);
+  double hypoxic_birth = reader.getDouble("cells", "hypoxic_birth", 6.0e-5);
+  double normoxic_birth = reader.getDouble("cells", "normoxic_birth", 6.0e-4);
+  double death = reader.getDouble("cells", "death", 0.0);
+  double hypoxic_friction = reader.getDouble("cells", "hypoxic_friction", 1.0);
+  double be_displacement = reader.getDouble("cells", "be_displacement", 1.5);
+  double be_multiplier = reader.getDouble("cells", "be_multiplier", 12.0);
+  double variance_motion = reader.getDouble("cells", "variance_motion", 4e-3);
 
   // [mutations]
-  initial_phenotype = ifile("mutations/initial_phenotype",0.0);
-  mutation_amount = ifile("mutations/mutation_amount",0.05);
-  mutation_probability = ifile("mutations/mutation_probability",0.01);
+  double initial_phenotype = reader.getDouble("mutations", "initial_phenotype", 0.0);
+  double mutation_amount = reader.getDouble("mutations", "mutation_amount", 0.05);
+  double mutation_probability = reader.getDouble("mutations", "mutation_probability", 0.01);
 
   // [oxygen]
-  initial_oxygen.resize(3);
-  for (int i=0; i<3; i++) {
-      initial_oxygen[i] = ifile("oxygen/initial_oxygen", 60.0, i);
-  }
-  oxygen_response = ifile("oxygen/oxygen_response",.0);
-  initial_concentration_function_type = ifile("oxygen/initial_concentration_function_type",0.0);
-  oxy_half_sat = ifile("oxygen/oxy_half_sat",2.5);
+  initial_oxygen = reader.getDoubleList("oxygen", "initial_oxygen", std::vector<double>(3, 60.0));
+  double oxygen_response = reader.getDouble("oxygen", "oxygen_response", 0.0);
+  double initial_concentration_function_type = reader.getDouble("oxygen", "initial_concentration_function_type", 0.0);
+  double oxy_half_sat = reader.getDouble("oxygen", "oxy_half_sat", 2.5);
 
   // [fem] --- pde (oxygen)
-  femSolverType = ifile("fem/femSolverType",0);
-  meshdir = ifile("fem/meshdir","./");
-  meshname = ifile("fem/meshname","rectangle_7x4x1.5_4Knodes.mesh");	
-  FreeFemCall = ifile("fem/FreeFemCall","FreeFem++");
-  FreeFemFile = ifile("fem/FreeFemFile","diffusion3d.edp");
-  ic_file_cells = ifile("cells/ic_file_cells","nil");
+  int femSolverType = reader.getInt("fem", "femSolverType", 0);
+  std::string meshdir = reader.getString("fem", "meshdir", "./");
+  std::string meshname = reader.getString("fem", "meshname", "rectangle_7x4x1.5_4Knodes.mesh");
+  std::string FreeFemCall = reader.getString("fem", "FreeFemCall", "FreeFem++");
+  std::string FreeFemFile = reader.getString("fem", "FreeFemFile", "diffusion3d.edp");
+  std::string ic_file_cells = reader.getString("cells", "ic_file_cells", "nil");
 
   // [geo] --- boxes and geometry
-  dimension = ifile("geo/dimension",3);
-  boxesx = ifile("geo/boxesx",-1000);
-  boxesy = ifile("geo/boxesy",-1000);
-  lattice_length_x = ifile("geo/lattice_length_x",100.1);
-  lattice_length_y = ifile("geo/lattice_length_y",100.1);
-  if (dimension==3) {
-    boxesz = ifile("geo/boxesz",-1000);
-    lattice_length_z = ifile("geo/lattice_length_z",100.1);
+  int dimension = reader.getInt("geo", "dimension", 3);
+  int boxesx = reader.getInt("geo", "boxesx", -1000);
+  int boxesy = reader.getInt("geo", "boxesy", -1000);
+  double lattice_length_x = reader.getDouble("geo", "lattice_length_x", 100.1);
+  double lattice_length_y = reader.getDouble("geo", "lattice_length_y", 100.1);
+  int boxesz;
+  double lattice_length_z;
+  if (dimension == 3) {
+    boxesz = reader.getInt("geo", "boxesz", -1000);
+    lattice_length_z = reader.getDouble("geo", "lattice_length_z", 100.1);
   } else {
     lattice_length_z = 1.1;
     boxesz = 1;
   }
-  ic_cell_x.resize(n_initial_cells);
-  ic_cell_y.resize(n_initial_cells);
-  ic_cell_z.resize(n_initial_cells);
-  for (int i=0; i<n_initial_cells; i++) {
-    ic_cell_x[i] = ifile("geo/ic_cell_x",lattice_length_x/2.,i);
-    ic_cell_y[i] = ifile("geo/ic_cell_y",lattice_length_y/2.,i);
-    if (dimension == 3) {
-      ic_cell_z[i] = ifile("geo/ic_cell_z",lattice_length_z/2.,i);
-    } else {
-      ic_cell_z[i] = 0.;
-    }
+  std::vector<double> defaultX(n_initial_cells, lattice_length_x / 2.0);
+  std::vector<double> defaultY(n_initial_cells, lattice_length_y / 2.0);
+  std::vector<double> defaultZ(n_initial_cells, lattice_length_z / 2.0);
+  ic_cell_x = reader.getDoubleList("geo", "ic_cell_x", defaultX);
+  ic_cell_y = reader.getDoubleList("geo", "ic_cell_y", defaultY);
+  if (dimension == 3) {
+  ic_cell_z = reader.getDoubleList("geo", "ic_cell_z", defaultZ);
   }
-  max_cell = ifile("geo/max_cell",100000.);
+  double max_cell = reader.getDouble("geo", "max_cell", 100000.0);
 
   // [vessels] --- vessel parameters
-  n_initial_vessels = ifile("vessels/n_initial_vessels",0);
-  vessel_length.resize(n_initial_vessels);
-  vessel_radius.resize(n_initial_vessels);
-  vessel_startx.resize(n_initial_vessels);
-  vessel_starty.resize(n_initial_vessels);
-  vessel_startz.resize(n_initial_vessels);
-  vessel_directionx.resize(n_initial_vessels);
-  vessel_directiony.resize(n_initial_vessels);
-  vessel_directionz.resize(n_initial_vessels);
-  for (int i=0; i<n_initial_vessels; i++) {
-    vessel_length[i] =  ifile("vessels/vessel_length",50.,i);
-    vessel_radius[i] =  ifile("vessels/vessel_radius",5.,i);
-    vessel_startx[i] =  ifile("vessels/vessel_startx",300.,i);
-    vessel_starty[i] =  ifile("vessels/vessel_starty",300.,i);
-    vessel_startz[i] =  ifile("vessels/vessel_startz",300.,i);
-    vessel_directionx[i] =  ifile("vessels/vessel_directionx",1.,i);
-    vessel_directiony[i] =  ifile("vessels/vessel_directiony",0.,i);
-    vessel_directionz[i] =  ifile("vessels/vessel_directionz",0.,i);
+  int n_initial_vessels = reader.getInt("vessels", "n_initial_vessels", 0);
+  for (int i = 0; i < n_initial_vessels; i++) {
+  vessel_length = reader.getDoubleList("vessels", "vessel_length", std::vector<double>(n_initial_vessels, 50.0));
+  vessel_radius = reader.getDoubleList("vessels", "vessel_radius", std::vector<double>(n_initial_vessels, 5.0));
+  vessel_startx = reader.getDoubleList("vessels", "vessel_startx", std::vector<double>(n_initial_vessels, 300.0));
+  vessel_starty = reader.getDoubleList("vessels", "vessel_starty", std::vector<double>(n_initial_vessels, 300.0));
+  vessel_startz = reader.getDoubleList("vessels", "vessel_startz", std::vector<double>(n_initial_vessels, 300.0));
+  vessel_directionx = reader.getDoubleList("vessels", "vessel_directionx", std::vector<double>(n_initial_vessels, 1.0));
+  vessel_directiony = reader.getDoubleList("vessels", "vessel_directiony", std::vector<double>(n_initial_vessels, 0.0));
+  vessel_directionz = reader.getDoubleList("vessels", "vessel_directionz", std::vector<double>(n_initial_vessels, 0.0));
   }
-  vessel_PoissonNo = ifile("vessels/vessel_PoissonNo",0.5);
-  vessel_YoungM = ifile("vessels/vessel_YoungM",1e-3);
-  vessel_adhesion = ifile("vessels/vessel_adhesion",3.72e-4); 
+  double vessel_PoissonNo = reader.getDouble("vessels", "vessel_PoissonNo", 0.5);
+  double vessel_YoungM = reader.getDouble("vessels", "vessel_YoungM", 1e-3);
+  double vessel_adhesion = reader.getDouble("vessels", "vessel_adhesion", 3.72e-4);
 
+  // [postprocessing]
+  int verbose = reader.getInt("postprocessing", "verbose", 1);
+  int writeVtkCells = reader.getInt("postprocessing", "writeVtkCells", 1);
+  int write_cells_frequency = reader.getInt("postprocessing", "write_cells_frequency", 1);
+  int write_boxes_frequency = reader.getInt("postprocessing", "write_boxes_frequency", 1);
+  int count_cells_frequency = reader.getInt("postprocessing", "count_cells_frequency", 1);
+  int writeCellList = reader.getInt("postprocessing", "writeCellList", 0);
+  int writeVtkVessels = reader.getInt("postprocessing", "writeVtkVessels", 0);
+  int writeVtkBoxes = reader.getInt("postprocessing", "writeVtkBoxes", 0); 
+  int getGenealogy = reader.getInt("postprocessing", "getGenealogy", 0);
+  std::string outputDirectory = reader.getString("postprocessing", "outputDirectory", "./");
+  std::string testcase = reader.getString("postprocessing", "testcase", "test");
+  std::string fileCellsVisualization = reader.getString("postprocessing", "fileCellsVisualization", "celulas.txt");
+  int cellTracking = reader.getInt("postprocessing", "cellTracking", 0);
+  std::string fileCellsTracking = reader.getString("postprocessing", "fileCellsTracking", "track.txt");
+  std::string fileCells = reader.getString("postprocessing", "fileCells", "all_cells.txt");
+  int writeStatistics = reader.getInt("postprocessing", "writeStatistics", 0);
+  std::string casename = reader.getString("postprocessing", "casename", "case");
+  std::string casedirectory = reader.getString("postprocessing", "casedirectory", "./");
+  int writeFullState = reader.getInt("postprocessing", "writeFullState", 1);
 
-  // postprocessing
-  verbose = ifile("postprocessing/verbose",1);
-  // default: write only cells
-  writeVtkCells = ifile("postprocessing/writeVtkCells",1);
-  write_cells_frequency = ifile("postprocessing/write_cells_frequency",1);
-  write_boxes_frequency = ifile("postprocessing/write_boxes_frequency",1);
-  count_cells_frequency = ifile("postprocessing/count_cells_frequency",1);
-  writeCellList = ifile("postprocessing/writeCellList",0);
-  writeVtkVessels = ifile("postprocessing/writeVtkVessels",0);
-  writeVtkBoxes = ifile("postprocessing/writeVtkBoxes",0);
-  getGenealogy = ifile("postprocessing/getGenealogy",0);
-  outputDirectory = ifile("postprocessing/outputDirectory","./");
-  testcase = ifile("postprocessing/testcase","test");
-  fileCellsVisualization =
-    ifile("postprocessing/fileCellsVisualization","celulas.txt");
-  cellTracking = ifile("postprocessing/cellTracking",0);
-  fileCellsTracking = ifile("postprocessing/fileCellsTracking","track.txt");
-  fileCells = ifile("postprocessing/fileCells","all_cells.txt");
-  writeStatistics = ifile("postprocessing/writeStatistics",0);
-  casename = ifile("postprocessing/casename","case");
-  casedirectory = ifile("postprocessing/casedirectory","./");
-  writeFullState = ifile("postprocessing/writeFullState",1);
-  
   cout << " --- ... parameters read. " << endl;
 
+std::cout << "Mesh file: " << meshname << "\n";
+  std::cout << "Death rate: " << death_rate << "\n";
+std::cout << "Steps: " << n_steps << "\n";
+//exit(1);
+
   // print parameter database
-  print();
+  //print();
 
 }
 

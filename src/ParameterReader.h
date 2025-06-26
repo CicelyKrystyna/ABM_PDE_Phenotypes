@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 class ParameterReader {
 public:
@@ -16,6 +17,8 @@ public:
 
     double getDouble(const std::string& section, const std::string& key) const;
     double getDouble(const std::string& section, const std::string& key, double defaultValue) const;
+    std::vector<double> getDoubleList(const std::string& section, const std::string& key, const std::vector<double>& defaults);
+
 
     bool hasKey(const std::string& section, const std::string& key) const;
 

@@ -274,9 +274,7 @@ void CoupledModel::init(string f)
   // read input parameters
   this->input_file_name = f;
 
-  
-
-  //read an input file with GetPot
+  //read an input file
   params.readFile(f);
 
   // initialize simulation
