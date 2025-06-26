@@ -35,6 +35,8 @@ void Param::readFile(string _file)
   std::cout << "Mesh file: " << meshname << "\n";
   std::cout << "Death rate: " << death_rate << "\n";
   std::cout << "Steps: " << steps << "\n";
+  string test_input = reader.getString("coupling","fileCells2FEM","cells.txt");
+  std::cout << "File: " << test_input << "\n";
   exit(1);
 
   GetPot ifile(_file.c_str());
@@ -44,7 +46,6 @@ void Param::readFile(string _file)
 
   // [coupling]
   fileCells2FEM = ifile("coupling/fileCells2FEM", "cells.txt");
-  //fileCells2FEM = reader.getString("coupling","fileCells2FEM");
   cout << "fileCells2FEM = " << fileCells2FEM << endl;
   fileCellsDensity2FEM = ifile("coupling/fileCellsDensity2FEM","cell_density.txt");
   fileFEM2Cells = ifile("coupling/fileFEM2Cells","concentration_O2.txt");
