@@ -1849,6 +1849,9 @@ void CoupledModel::loop()
 	                }
 	              }
                 }
+                if (ic>0) {
+                  cout << " Total cell read " << ic << endl;
+                }
                 o2_conc_file.close();
             }
         }

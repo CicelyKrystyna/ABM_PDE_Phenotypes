@@ -88,8 +88,6 @@ void Param::readFile(string _file)
   boxesy = reader.getInt("geo", "boxesy", -1000);
   lattice_length_x = reader.getDouble("geo", "lattice_length_x", 100.1);
   lattice_length_y = reader.getDouble("geo", "lattice_length_y", 100.1);
-  boxesz;
-  lattice_length_z;
   if (dimension == 3) {
     boxesz = reader.getInt("geo", "boxesz", -1000);
     lattice_length_z = reader.getDouble("geo", "lattice_length_z", 100.1);
@@ -102,9 +100,8 @@ void Param::readFile(string _file)
   std::vector<double> defaultZ(n_initial_cells, lattice_length_z / 2.0);
   ic_cell_x = reader.getDoubleList("geo", "ic_cell_x", defaultX);
   ic_cell_y = reader.getDoubleList("geo", "ic_cell_y", defaultY);
-  if (dimension == 3) {
-    ic_cell_z = reader.getDoubleList("geo", "ic_cell_z", defaultZ);
-  }
+  ic_cell_z = reader.getDoubleList("geo", "ic_cell_z", defaultZ);
+  
   max_cell = reader.getDouble("geo", "max_cell", 100000.0);
 
   // [vessels] --- vessel parameters
@@ -222,8 +219,8 @@ void Param::print()
   cout << endl;
 
   cout << "[vessels]" << endl;
+  cout << "n_initial_vessels = " << n_initial_vessels << endl;  
   if (n_initial_vessels != 0){
-    cout << "n_initial_vessels = " << n_initial_vessels << endl;
     cout << "vessel_length = ";
     for (int i=0; i<n_initial_vessels; i++) {
       cout << vessel_length[i] << " ";
@@ -267,9 +264,7 @@ void Param::print()
     cout << "vessel_PoissonNo = " << vessel_PoissonNo << endl;
     cout << "vessel_YoungM = " << vessel_YoungM << endl;
     cout << "vessel_adhesion = " << vessel_adhesion << endl;
-  } else {
-      cout << "There are no vessels in this simulation." << endl;
-  }
+  } 
   cout << endl;
 
   cout << "[geo]" << endl;
