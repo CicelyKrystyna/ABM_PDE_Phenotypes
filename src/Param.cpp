@@ -8,8 +8,6 @@ Class for input parameters
 #include "ParameterReader.h"
 #include "Param.h"
 
-using namespace std;
-
 double PI_val=3.1415926535897932384626433832795;
 
 void Param::readFile(string _file)
@@ -17,83 +15,81 @@ void Param::readFile(string _file)
   filename = _file;
 
   ifstream testfile;
-  // check if file exists
+  // check if file exists and give error if not
   testfile.open(_file.c_str());
   if(!testfile.good()) {
     cerr << " !!bio_abm_fem - ERROR!!: file " << _file << " not found." << endl;
     exit(1);
   }
    
-
   ParameterReader reader;
   reader.read(_file);
 
   GetPot ifile(_file.c_str());
 
   // read input
-  cout << " --- read file (GetPot) " << _file << endl;
+  std::cout << " --- read input file:  " << _file << std::endl;
 
   // [coupling]
-  std::string fileCells2FEM = reader.getString("coupling", "fileCells2FEM", "cells.txt");
-  std::string fileCellsDensity2FEM = reader.getString("coupling", "fileCellsDensity2FEM", "cell_density.txt");
-  std::string fileFEM2Cells = reader.getString("coupling", "fileFEM2Cells", "concentration_O2.txt");
+  fileCells2FEM = reader.getString("coupling", "fileCells2FEM", "cells.txt");
+  fileCellsDensity2FEM = reader.getString("coupling", "fileCellsDensity2FEM", "cell_density.txt");
+  fileFEM2Cells = reader.getString("coupling", "fileFEM2Cells", "concentration_O2.txt");
+    
+  // [fem] --- pde (oxygen)
+  femSolverType = reader.getInt("fem", "femSolverType", 0);
+  meshdir = reader.getString("fem", "meshdir", "./");
+  meshname = reader.getString("fem", "meshname", "rectangle_7x4x1.5_4Knodes.mesh");
+  FreeFemCall = reader.getString("fem", "FreeFemCall", "FreeFem++");
+  FreeFemFile = reader.getString("fem", "FreeFemFile", "diffusion3d.edp");
+  ic_file_cells = reader.getString("cells", "ic_file_cells", "nil");
+
  
   // [cells] --- cell parameters
-  int readCellState = reader.getInt("cells", "readCellState", 0);
-  std::string cellStateFile = "test";
+  readCellState = reader.getInt("cells", "readCellState", 0);
+  cellStateFile = "test";
   if (readCellState) {
-  cellStateFile = reader.getString("cells", "cellStateFile", "test");
+    cellStateFile = reader.getString("cells", "cellStateFile", "test");
   }
-  int n_initial_cells = reader.getInt("cells", "n_initial_cells", 1);
-  int n_steps = reader.getInt("cells", "n_steps", 0);
-  double time_step = reader.getDouble("cells", "time_step", 1.0);
-  double time_death = reader.getDouble("cells", "time_death", 2880.0);
-  double radius = reader.getDouble("cells", "radius", 5.0);
-  double Gcm = reader.getDouble("cells", "Gcm", 0.01);
-  double growth_rate = reader.getDouble("cells", "growth_rate", 0.1);
-  double YoungM = reader.getDouble("cells", "YoungM", 1e-3);
-  double PoissonNo = reader.getDouble("cells", "PoissonNo", 0.5);
-  double adhesion_value = reader.getDouble("cells", "adhesion_value", 3.72e-4);
-  double compressibility = reader.getDouble("cells", "compressibility", 1.0);
-  double contact_inhibition = reader.getDouble("cells", "contact_inhibition", 16.0);
-  double death_rate = reader.getDouble("cells", "death");
-
+  n_initial_cells = reader.getInt("cells", "n_initial_cells", 1);
+  n_steps = reader.getInt("cells", "n_steps", 0);
+  time_step = reader.getDouble("cells", "time_step", 1.0);
+  time_death = reader.getDouble("cells", "time_death", 2880.0);
+  radius = reader.getDouble("cells", "radius", 5.0);
+  Gcm = reader.getDouble("cells", "Gcm", 0.01);
+  growth_rate = reader.getDouble("cells", "growth_rate", 0.1);
+  YoungM = reader.getDouble("cells", "YoungM", 1e-3);
+  PoissonNo = reader.getDouble("cells", "PoissonNo", 0.5);
+  adhesion_value = reader.getDouble("cells", "adhesion_value", 3.72e-4);
+  compressibility = reader.getDouble("cells", "compressibility", 1.0);
+  contact_inhibition = reader.getDouble("cells", "contact_inhibition", 16.0);
   // birth energy parameters
-  double hypoxic_birth = reader.getDouble("cells", "hypoxic_birth", 6.0e-5);
-  double normoxic_birth = reader.getDouble("cells", "normoxic_birth", 6.0e-4);
-  double death = reader.getDouble("cells", "death", 0.0);
-  double hypoxic_friction = reader.getDouble("cells", "hypoxic_friction", 1.0);
-  double be_displacement = reader.getDouble("cells", "be_displacement", 1.5);
-  double be_multiplier = reader.getDouble("cells", "be_multiplier", 12.0);
-  double variance_motion = reader.getDouble("cells", "variance_motion", 4e-3);
+  hypoxic_birth = reader.getDouble("cells", "hypoxic_birth", 6.0e-5);
+  normoxic_birth = reader.getDouble("cells", "normoxic_birth", 6.0e-4);
+  death = reader.getDouble("cells", "death", 0.0);
+  hypoxic_friction = reader.getDouble("cells", "hypoxic_friction", 1.0);
+  be_displacement = reader.getDouble("cells", "be_displacement", 1.5);
+  be_multiplier = reader.getDouble("cells", "be_multiplier", 12.0);
+  variance_motion = reader.getDouble("cells", "variance_motion", 4e-3);
 
   // [mutations]
-  double initial_phenotype = reader.getDouble("mutations", "initial_phenotype", 0.0);
-  double mutation_amount = reader.getDouble("mutations", "mutation_amount", 0.05);
-  double mutation_probability = reader.getDouble("mutations", "mutation_probability", 0.01);
+  initial_phenotype = reader.getDouble("mutations", "initial_phenotype", 0.0);
+  mutation_amount = reader.getDouble("mutations", "mutation_amount", 0.05);
+  mutation_probability = reader.getDouble("mutations", "mutation_probability", 0.01);
 
   // [oxygen]
   initial_oxygen = reader.getDoubleList("oxygen", "initial_oxygen", std::vector<double>(3, 60.0));
-  double oxygen_response = reader.getDouble("oxygen", "oxygen_response", 0.0);
-  double initial_concentration_function_type = reader.getDouble("oxygen", "initial_concentration_function_type", 0.0);
-  double oxy_half_sat = reader.getDouble("oxygen", "oxy_half_sat", 2.5);
-
-  // [fem] --- pde (oxygen)
-  int femSolverType = reader.getInt("fem", "femSolverType", 0);
-  std::string meshdir = reader.getString("fem", "meshdir", "./");
-  std::string meshname = reader.getString("fem", "meshname", "rectangle_7x4x1.5_4Knodes.mesh");
-  std::string FreeFemCall = reader.getString("fem", "FreeFemCall", "FreeFem++");
-  std::string FreeFemFile = reader.getString("fem", "FreeFemFile", "diffusion3d.edp");
-  std::string ic_file_cells = reader.getString("cells", "ic_file_cells", "nil");
+  oxygen_response = reader.getDouble("oxygen", "oxygen_response", 0.0);
+  initial_concentration_function_type = reader.getDouble("oxygen", "initial_concentration_function_type", 0.0);
+  oxy_half_sat = reader.getDouble("oxygen", "oxy_half_sat", 2.5);
 
   // [geo] --- boxes and geometry
-  int dimension = reader.getInt("geo", "dimension", 3);
-  int boxesx = reader.getInt("geo", "boxesx", -1000);
-  int boxesy = reader.getInt("geo", "boxesy", -1000);
-  double lattice_length_x = reader.getDouble("geo", "lattice_length_x", 100.1);
-  double lattice_length_y = reader.getDouble("geo", "lattice_length_y", 100.1);
-  int boxesz;
-  double lattice_length_z;
+  dimension = reader.getInt("geo", "dimension", 3);
+  boxesx = reader.getInt("geo", "boxesx", -1000);
+  boxesy = reader.getInt("geo", "boxesy", -1000);
+  lattice_length_x = reader.getDouble("geo", "lattice_length_x", 100.1);
+  lattice_length_y = reader.getDouble("geo", "lattice_length_y", 100.1);
+  boxesz;
+  lattice_length_z;
   if (dimension == 3) {
     boxesz = reader.getInt("geo", "boxesz", -1000);
     lattice_length_z = reader.getDouble("geo", "lattice_length_z", 100.1);
@@ -107,56 +103,51 @@ void Param::readFile(string _file)
   ic_cell_x = reader.getDoubleList("geo", "ic_cell_x", defaultX);
   ic_cell_y = reader.getDoubleList("geo", "ic_cell_y", defaultY);
   if (dimension == 3) {
-  ic_cell_z = reader.getDoubleList("geo", "ic_cell_z", defaultZ);
+    ic_cell_z = reader.getDoubleList("geo", "ic_cell_z", defaultZ);
   }
-  double max_cell = reader.getDouble("geo", "max_cell", 100000.0);
+  max_cell = reader.getDouble("geo", "max_cell", 100000.0);
 
   // [vessels] --- vessel parameters
-  int n_initial_vessels = reader.getInt("vessels", "n_initial_vessels", 0);
+  n_initial_vessels = reader.getInt("vessels", "n_initial_vessels", 0);
   for (int i = 0; i < n_initial_vessels; i++) {
-  vessel_length = reader.getDoubleList("vessels", "vessel_length", std::vector<double>(n_initial_vessels, 50.0));
-  vessel_radius = reader.getDoubleList("vessels", "vessel_radius", std::vector<double>(n_initial_vessels, 5.0));
-  vessel_startx = reader.getDoubleList("vessels", "vessel_startx", std::vector<double>(n_initial_vessels, 300.0));
-  vessel_starty = reader.getDoubleList("vessels", "vessel_starty", std::vector<double>(n_initial_vessels, 300.0));
-  vessel_startz = reader.getDoubleList("vessels", "vessel_startz", std::vector<double>(n_initial_vessels, 300.0));
-  vessel_directionx = reader.getDoubleList("vessels", "vessel_directionx", std::vector<double>(n_initial_vessels, 1.0));
-  vessel_directiony = reader.getDoubleList("vessels", "vessel_directiony", std::vector<double>(n_initial_vessels, 0.0));
-  vessel_directionz = reader.getDoubleList("vessels", "vessel_directionz", std::vector<double>(n_initial_vessels, 0.0));
+    vessel_length = reader.getDoubleList("vessels", "vessel_length", std::vector<double>(n_initial_vessels, 50.0));
+    vessel_radius = reader.getDoubleList("vessels", "vessel_radius", std::vector<double>(n_initial_vessels, 5.0));
+    vessel_startx = reader.getDoubleList("vessels", "vessel_startx", std::vector<double>(n_initial_vessels, 300.0));
+    vessel_starty = reader.getDoubleList("vessels", "vessel_starty", std::vector<double>(n_initial_vessels, 300.0));
+    vessel_startz = reader.getDoubleList("vessels", "vessel_startz", std::vector<double>(n_initial_vessels, 300.0));
+    vessel_directionx = reader.getDoubleList("vessels", "vessel_directionx", std::vector<double>(n_initial_vessels, 1.0));
+    vessel_directiony = reader.getDoubleList("vessels", "vessel_directiony", std::vector<double>(n_initial_vessels, 0.0));
+    vessel_directionz = reader.getDoubleList("vessels", "vessel_directionz", std::vector<double>(n_initial_vessels, 0.0));
   }
-  double vessel_PoissonNo = reader.getDouble("vessels", "vessel_PoissonNo", 0.5);
-  double vessel_YoungM = reader.getDouble("vessels", "vessel_YoungM", 1e-3);
-  double vessel_adhesion = reader.getDouble("vessels", "vessel_adhesion", 3.72e-4);
+  vessel_PoissonNo = reader.getDouble("vessels", "vessel_PoissonNo", 0.5);
+  vessel_YoungM = reader.getDouble("vessels", "vessel_YoungM", 1e-3);
+  vessel_adhesion = reader.getDouble("vessels", "vessel_adhesion", 3.72e-4);
 
   // [postprocessing]
-  int verbose = reader.getInt("postprocessing", "verbose", 1);
-  int writeVtkCells = reader.getInt("postprocessing", "writeVtkCells", 1);
-  int write_cells_frequency = reader.getInt("postprocessing", "write_cells_frequency", 1);
-  int write_boxes_frequency = reader.getInt("postprocessing", "write_boxes_frequency", 1);
-  int count_cells_frequency = reader.getInt("postprocessing", "count_cells_frequency", 1);
-  int writeCellList = reader.getInt("postprocessing", "writeCellList", 0);
-  int writeVtkVessels = reader.getInt("postprocessing", "writeVtkVessels", 0);
-  int writeVtkBoxes = reader.getInt("postprocessing", "writeVtkBoxes", 0); 
-  int getGenealogy = reader.getInt("postprocessing", "getGenealogy", 0);
-  std::string outputDirectory = reader.getString("postprocessing", "outputDirectory", "./");
-  std::string testcase = reader.getString("postprocessing", "testcase", "test");
-  std::string fileCellsVisualization = reader.getString("postprocessing", "fileCellsVisualization", "celulas.txt");
-  int cellTracking = reader.getInt("postprocessing", "cellTracking", 0);
-  std::string fileCellsTracking = reader.getString("postprocessing", "fileCellsTracking", "track.txt");
-  std::string fileCells = reader.getString("postprocessing", "fileCells", "all_cells.txt");
-  int writeStatistics = reader.getInt("postprocessing", "writeStatistics", 0);
-  std::string casename = reader.getString("postprocessing", "casename", "case");
-  std::string casedirectory = reader.getString("postprocessing", "casedirectory", "./");
-  int writeFullState = reader.getInt("postprocessing", "writeFullState", 1);
+  verbose = reader.getInt("postprocessing", "verbose", 1);
+  writeVtkCells = reader.getInt("postprocessing", "writeVtkCells", 1);
+  write_cells_frequency = reader.getInt("postprocessing", "write_cells_frequency", 1);
+  write_boxes_frequency = reader.getInt("postprocessing", "write_boxes_frequency", 1);
+  count_cells_frequency = reader.getInt("postprocessing", "count_cells_frequency", 1);
+  writeCellList = reader.getInt("postprocessing", "writeCellList", 0);
+  writeVtkVessels = reader.getInt("postprocessing", "writeVtkVessels", 0);
+  writeVtkBoxes = reader.getInt("postprocessing", "writeVtkBoxes", 0);
+  getGenealogy = reader.getInt("postprocessing", "getGenealogy", 0);
+  outputDirectory = reader.getString("postprocessing", "outputDirectory", "./");
+  testcase = reader.getString("postprocessing", "testcase", "test");
+  fileCellsVisualization = reader.getString("postprocessing", "fileCellsVisualization", "celulas.txt");
+  cellTracking = reader.getInt("postprocessing", "cellTracking", 0);
+  fileCellsTracking = reader.getString("postprocessing", "fileCellsTracking", "track.txt");
+  fileCells = reader.getString("postprocessing", "fileCells", "all_cells.txt");
+  writeStatistics = reader.getInt("postprocessing", "writeStatistics", 0);
+  casename = reader.getString("postprocessing", "casename", "case");
+  casedirectory = reader.getString("postprocessing", "casedirectory", "./");
+  writeFullState = reader.getInt("postprocessing", "writeFullState", 1);
 
-  cout << " --- ... parameters read. " << endl;
-
-std::cout << "Mesh file: " << meshname << "\n";
-  std::cout << "Death rate: " << death_rate << "\n";
-std::cout << "Steps: " << n_steps << "\n";
-//exit(1);
+  std::cout << " --- ... parameters read. " << std::endl;
 
   // print parameter database
-  //print();
+  print();
 
 }
 
@@ -164,27 +155,33 @@ void Param::print()
 {
   cout << endl;
   cout << " # ======================= " << endl;
-  cout << " # INPUT FILE (GetPot): " << filename << endl;
+  cout << " # INPUT FILE: " << filename << endl;
   cout << " # ======================= " << endl;
   cout << endl;
 
   cout << "[coupling]" << endl;
-  //cout << "fileConcCells = " << fileConcCells << endl;
   cout << "fileCells2FEM = " << fileCells2FEM << endl;
   cout << "fileCellsDensity2FEM = " << fileCellsDensity2FEM << endl;
   cout << "fileFEM2Cells = " << fileFEM2Cells << endl;
   cout << endl;
 
   cout << "[fem]" << endl;
-  cout << "meshdir = " << meshdir << endl;
-  cout << "meshname = " << meshname << endl;
-  cout << "FreeFemFile = " << FreeFemFile << endl;
-  cout << endl;
+    if (femSolverType){
+        cout << "Finite element solver is on." << endl;
+        cout << "meshdir = " << meshdir << endl;
+        cout << "meshname = " << meshname << endl;
+        cout << "FreeFemFile = " << FreeFemFile << endl;
+    } else {
+        cout << "Finite element solver is off." << endl;
+    }
+    cout << endl;
 
   cout << "[cells]" << endl;
-  cout << "readCellState = " << readCellState << endl;
   if (readCellState) {
+    cout << "We read in an initial cell state file." << endl;
     cout << "cellStateFile = '" << cellStateFile << "'" << endl;
+  } else {
+    cout << "No initial cell state file." << endl;
   }
   cout << "n_initial_cells = " << n_initial_cells << endl;
   cout << "n_steps = " << n_steps << endl;
@@ -214,61 +211,65 @@ void Param::print()
   cout << endl;
   
   cout << "[oxygen]" << endl;
-  cout << "initial oxygen = '";
+  cout << "initial oxygen = ";
   for (int i=0; i<3; i++) {
       cout << initial_oxygen[i] << " ";
   }
-  cout << "'" << endl;
+  cout << endl;
   cout << "initial_concentration_function_type = " << initial_concentration_function_type << endl;
   cout << "oxy_half_sat = " << oxy_half_sat << endl;
   cout << "oxygen_response = " << oxygen_response << endl;
   cout << endl;
 
   cout << "[vessels]" << endl;
-  cout << "n_initial_vessels = " << n_initial_vessels << endl;
-  cout << "vessel_length = '";
-  for (int i=0; i<n_initial_vessels; i++) {
-    cout << vessel_length[i] << " ";
+  if (n_initial_vessels != 0){
+    cout << "n_initial_vessels = " << n_initial_vessels << endl;
+    cout << "vessel_length = ";
+    for (int i=0; i<n_initial_vessels; i++) {
+      cout << vessel_length[i] << " ";
+    }
+    cout << endl;
+    cout << "vessel_radius = ";
+    for (int i=0; i<n_initial_vessels; i++) {
+      cout << vessel_radius[i] << " ";
+    }
+    cout << endl;
+    cout << "vessel_startx = ";
+    for (int i=0; i<n_initial_vessels; i++) {
+      cout << vessel_startx[i] << " ";
+    }
+    cout << endl;
+    cout << "vessel_starty = ";
+    for (int i=0; i<n_initial_vessels; i++) {
+      cout << vessel_starty[i] << " ";
+    }
+    cout << endl;
+    cout << "vessel_startz = ";
+    for (int i=0; i<n_initial_vessels; i++) {
+      cout << vessel_startz[i] << " ";
+    }
+    cout << endl;
+    cout << "vessel_directionx = ";
+    for (int i=0; i<n_initial_vessels; i++) {
+      cout << vessel_directionx[i] << " ";
+    }
+    cout << endl;
+    cout << "vessel_directiony = ";
+    for (int i=0; i<n_initial_vessels; i++) {
+      cout << vessel_directiony[i] << " ";
+    }
+    cout << endl;
+    cout << "vessel_directionz = ";
+    for (int i=0; i<n_initial_vessels; i++) {
+      cout << vessel_directionz[i] << " ";
+    }
+    cout << endl;
+    cout << "vessel_PoissonNo = " << vessel_PoissonNo << endl;
+    cout << "vessel_YoungM = " << vessel_YoungM << endl;
+    cout << "vessel_adhesion = " << vessel_adhesion << endl;
+  } else {
+      cout << "There are no vessels in this simulation." << endl;
   }
-  cout << "'" << endl;
-  cout << "vessel_radius = '";
-  for (int i=0; i<n_initial_vessels; i++) {
-    cout << vessel_radius[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "vessel_startx = '";
-  for (int i=0; i<n_initial_vessels; i++) {
-    cout << vessel_startx[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "vessel_starty = '";
-  for (int i=0; i<n_initial_vessels; i++) {
-    cout << vessel_starty[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "vessel_startz = '";
-  for (int i=0; i<n_initial_vessels; i++) {
-    cout << vessel_startz[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "vessel_directionx = '";
-  for (int i=0; i<n_initial_vessels; i++) {
-    cout << vessel_directionx[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "vessel_directiony = '";
-  for (int i=0; i<n_initial_vessels; i++) {
-    cout << vessel_directiony[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "vessel_directionz = '";
-  for (int i=0; i<n_initial_vessels; i++) {
-    cout << vessel_directionz[i] << " ";
-  }
-  cout << "'" << endl;
-  cout << "vessel_PoissonNo = " << vessel_PoissonNo << endl;
-  cout << "vessel_YoungM = " << vessel_YoungM << endl;
-  cout << "vessel_adhesion = " << vessel_adhesion << endl;
   cout << endl;
 
   cout << "[geo]" << endl;
@@ -283,21 +284,21 @@ void Param::print()
   if (ic_file_cells!="nil") {
     cout << "ic_file_cells = '" << ic_file_cells << "'" << endl;
   }
-  cout << "ic_cell_x = '";
+  cout << "ic_cell_x = ";
   for (int i=0; i<n_initial_cells; i++) {
     cout << ic_cell_x[i] << " ";
   }
-  cout << "'" << endl;
-  cout << "ic_cell_y = '";
+  cout << endl;
+  cout << "ic_cell_y = ";
   for (int i=0; i<n_initial_cells; i++) {
     cout << ic_cell_y[i] << " ";
   }
-  cout << "'" << endl;
-  cout << "ic_cell_z = '";
+  cout << endl;
+  cout << "ic_cell_z = ";
   for (int i=0; i<n_initial_cells; i++) {
     cout << ic_cell_z[i] << " ";
   }
-  cout << "'" << endl;
+  cout << endl;
   cout << "max_cell = " << max_cell << endl;
   cout << endl;
   
@@ -318,8 +319,7 @@ void Param::print()
   cout << "fileCells = " << fileCells << endl;
   cout << "writeStatistics = " << writeStatistics << endl;
   cout << "writeFullState = " << writeFullState << endl;
-
-  
+    
   cout << endl;
 }
 

@@ -24,10 +24,10 @@ class Param
   ~Param(){};
 
   string filename;
-  string fileConcCells;
-  string fileCells2FEM;
-  string fileCellsDensity2FEM;
-  string fileFEM2Cells;
+  std::string fileConcCells;
+  std::string fileCells2FEM;
+  std::string fileCellsDensity2FEM;
+  std::string fileFEM2Cells;
 
   // [cells] --- cell parameters
   int readCellState;
