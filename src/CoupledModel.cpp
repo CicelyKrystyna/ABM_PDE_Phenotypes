@@ -97,14 +97,14 @@ double CoupledModel::aleatorio(const double a, const double b)
    ***************************************************************************** */
 double CoupledModel::box_muller(const double m, const double s)	
 {				        
-  double w, y1;
-  double x1, x2;
+  double y1;
   static double y2;
   static int use_last = 0;
   if (use_last)	{	        /* use value from previous call */
     y1 = y2;
     use_last = 0;
   } else {
+    double w, x1, x2;
     do {
       x1 = 2.0 * this->aleatorio() - 1.0;
       x2 = 2.0 * this->aleatorio() - 1.0;
@@ -165,15 +165,13 @@ double CoupledModel::DISTANCE(const Cell& c1, const Cell& c2)
 double CoupledModel::DISTANCE(const Cell& cell, const Vessel& vessel)
 {
   double c_to_v[3]; // cell-to-vessel vector
-  double c_to_v_length_2; // length of c_to_v squared
-  double c_to_v_dot_v_v; // scalar product c_to_v * (v_end-v_start)
-  
-  c_to_v_length_2 = 0.;
-  c_to_v_dot_v_v = 0.;
+  double c_to_v_length_2 = 0.0; // length of c_to_v squared
+  double c_to_v_dot_v_v = 0.0; // scalar product c_to_v * (v_end-v_start)
+
   for (unsigned int i=0; i<3; i++) {
     c_to_v[i] = cell.position[i]-vessel.ves_start[i];
-    c_to_v_length_2 = c_to_v_length_2 + c_to_v[i]*c_to_v[i];
-    c_to_v_dot_v_v = c_to_v_dot_v_v + c_to_v[i]*vessel.ves_length*vessel.ves_direction[i];
+    c_to_v_length_2 += c_to_v[i]*c_to_v[i];
+    c_to_v_dot_v_v += c_to_v[i]*vessel.ves_length*vessel.ves_direction[i];
   }
   
   if (c_to_v_dot_v_v < 0.) {
@@ -181,7 +179,7 @@ double CoupledModel::DISTANCE(const Cell& cell, const Vessel& vessel)
     } else if (c_to_v_dot_v_v > vessel.ves_length*vessel.ves_length) {
     double distance = 0.;
     for (unsigned int i=0; i<3; i++) {
-      distance = distance +
+      distance +=
 	(cell.position[i]-(vessel.ves_start[i]+vessel.ves_length*vessel.ves_direction[i]))*
 	(cell.position[i]-(vessel.ves_start[i]+vessel.ves_length*vessel.ves_direction[i]));
     }
@@ -199,15 +197,11 @@ double CoupledModel::DISTANCE(const Cell& cell, const Vessel& vessel)
 void CoupledModel::VESSELPOINT(const Cell& cell, const Vessel& vessel)
 {
   double c_v[3]; // cell-to-vessel vector
-  double c_v_length_2; // length of c_to_v squared
-  double c_v_dot_v_v; // scalar product c_to_v * (v_end-v_start)
+  double c_v_dot_v_v = 0.0; // scalar product c_to_v * (v_end-v_start)
   
-  c_v_length_2 = 0.;
-  c_v_dot_v_v = 0.;
   for (unsigned int i=0; i<3; i++) {
     c_v[i] = cell.position[i]-vessel.ves_start[i];
-    c_v_length_2 = c_v_length_2 + c_v[i]*c_v[i];
-    c_v_dot_v_v = c_v_dot_v_v + c_v[i]*vessel.ves_length*vessel.ves_direction[i];
+    c_v_dot_v_v += c_v[i]*vessel.ves_length*vessel.ves_direction[i];
   }
   
   if (c_v_dot_v_v < 0.) {
@@ -285,7 +279,7 @@ void CoupledModel::init(string f)
   /// @brief: cell compressibility: determined from CICELY TO CLARIFY
   double cell_compressibility = params.compressibility;
   this->max_cell_in_box = box_volume/cell_estimated_volume*cell_compressibility;
-  cout << " === box volume: " << box_volume << " cell volume:" << cell_estimated_volume << endl;//" " << box_volume/cell_estimated_volume << endl;
+  cout << " === box volume: " << box_volume << " cell volume:" << cell_estimated_volume << endl;
   if (params.dimension == 2) this->max_cell_in_box *= 2;
   cout << " === max. number of cell per box allowed: " <<  this->max_cell_in_box << endl;
   this->max_cell = params.max_cell;
@@ -294,14 +288,7 @@ void CoupledModel::init(string f)
   this->set_ic_vessels();
 
   cout << " set initial conditions for cells" << endl;
-  if (params.readCellState){
-    // read full initial conditions
-    this->readFullState(params.cellStateFile);
-    //this->set_ic_cells();
-  } else {
-    // set IC for cells
-    this->set_ic_cells();
-  }
+  (params.readCellState) ? this->readFullState(params.cellStateFile) : this->set_ic_cells();
   cout << " (start) # of cells total: " << total_no_of_cells << " " << total_no_of_removed_cells << endl;
 
   // updates the maximum value in boxes
@@ -351,7 +338,6 @@ void CoupledModel::init(string f)
   initial_cells_in_box = 0;
   cells_counter = 0;
   daughter1 = 1;
-  //cout << " (start) # of cells total: " << total_no_of_cells << " " << total_no_of_removed_cells << endl;
 }
 
 /* ***************************************************************************
@@ -435,13 +421,8 @@ void CoupledModel::set_ic_cells()
     cell.cont_pheno = params.initial_phenotype;
     cell.phenotype_counter = 0;
 
-    // initialising the cell contact area
-    //cell.contact_area_old=0.0;
-    //cell.variation_area=0.0;
-
     /// @brief concentration
     cell.O2 = oxygen_concentration_function(cell.position);
-    //cell.O2 = params.initial_oxygen; // !! TODO: this should be given by the diffusion solver !!
     cell.dxO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dyO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
     cell.dzO2 = 0.; // !! TODO: this should be given by the diffusion solver !!
@@ -540,142 +521,117 @@ void CoupledModel::readFullState(string filename)
     if (file.is_open()) {
         while (getline(file, line)) {
           // read cell data from the file line
-          if (!line.empty() && line[0] != '#') 
-          {
-            //cout << line << endl; // process the line
-            stringstream ss(line);
-            unsigned int _global_counter, _name, _mother_name, _birthday;
-            std::vector<int> _box(params.dimension);
-            ss >> _global_counter >> _name >> _mother_name >> _birthday;
-            for (unsigned int b1=0;b1<this->params.dimension;b1++) {
-              ss >> _box[b1]; 
+            if (!line.empty() && line[0] != '#') {
+                stringstream ss(line);
+                unsigned int _global_counter, _name, _mother_name, _birthday;
+                std::vector<int> _box(params.dimension);
+                ss >> _global_counter >> _name >> _mother_name >> _birthday;
+                for (unsigned int b1=0;b1<this->params.dimension;b1++) {
+                    ss >> _box[b1];
+                }
+                
+                std::vector<double> _position(params.dimension), _vel(params.dimension);
+                for (unsigned int b1=0;b1<this->params.dimension;b1++) {
+                    ss >> _position[b1];
+                }
+                for (unsigned int b1=0;b1<this->params.dimension;b1++) {
+                    ss >> _vel[b1];
+                }
+                unsigned int _type, _hypoxic_count, _phenotype_counter;
+                double _radius, _energy,  _adhesion,  _cont_pheno, _phenotype;
+                ss >> _radius >> _energy >> _adhesion >> _type >> _hypoxic_count >> _cont_pheno >> _phenotype >> _phenotype_counter;
+                
+                double _O2,_dxO2,_dyO2, _dzO2;
+                ss >> _O2 >> _dxO2 >> _dyO2 >> _dzO2;
+                
+                double _reloj;
+                ss >> _reloj;
+                
+                // set new start time
+                this->reloj = _reloj;
+                this->starting_time = _reloj;
+                
+                this->new_maxx = this->maxx;
+                this->new_maxy = this->maxy;
+                if (params.dimension>2) this->new_maxz = this->maxz;
+                
+                this->new_minx = this->minx;
+                this->new_miny = this->miny;
+                if (params.dimension>2) this->new_minz = this->minz;
+                
+                cell_counter++;
+                Cell cell;
+                for (unsigned int j=0; j<params.dimension; j++)
+                {
+                    cell.position[j]=_position[j];
+                    cell.position_old[j]=_position[j];
+                    cell.vel[j]=_vel[j];
+                }
+                
+                cell.name = _name;
+                cell.contacts = 0; // TO DO: read this from file
+                cell.mother_name = _mother_name;
+                cell.birthday = _birthday;
+                cell.radius = _radius;
+                cell.energy = _energy;
+                cell.type = _type;
+                cell.cont_pheno = _cont_pheno;
+                cell.phenotype_counter = _phenotype_counter;
+                cell.O2 = _O2;
+                cell.dxO2 = _dxO2;
+                cell.dyO2 = _dyO2;
+                cell.dzO2 = _dzO2;
+                cell.phenotype = _phenotype;
+                cell.hypoxic_count = _hypoxic_count;
+                cell.adhesion = _adhesion;
+                
+                cell.box[0]=_box[0];
+                cell.box[1]=_box[1];
+                if (params.dimension>2) {
+                    cell.box[2]=_box[2];
+                } else {
+                    cell.box[2]=0;
+                }
+                int u = _box[0];
+                int v = _box[1];
+                int w = 0;
+                if (params.dimension>2) {
+                    w = _box[2];
+                }
+                
+                // add cell to boxes
+                this->boxes_A[u][v][w].cells.push_back(cell);
+                this->boxes_new_A[u][v][w].cells.push_back(cell);
+                
+                // compute the extrema of occupied boxes
+                if(this->maxx<u && u<(int) params.boxesx) {
+                    this->new_maxx=u;
+                }
+                if(this->maxy<v && v<(int) params.boxesy) {
+                    this->new_maxy=v;
+                }
+                if(this->maxz<w && w<(int) params.boxesz) {
+                    this->new_maxz=w;
+                }
+                
+                if(this->minx>u && u>0) {
+                    this->new_minx=u;
+                }
+                if(this->miny>v && v>0) {
+                    this->new_miny=v;
+                }
+                if(this->minz>w && w>0) {
+                    this->new_minz=w;
+                }
+                
+                this->maxx = this->new_maxx;
+                this->maxy = this->new_maxy;
+                if (params.dimension>2) this->maxz = this->new_maxz;
+                
+                this->minx = this->new_minx;
+                this->miny = this->new_miny;
+                if (params.dimension>2) this->minz = this->new_minz;
             }
-            
-            std::vector<double> _position(params.dimension), _vel(params.dimension);
-            for (unsigned int b1=0;b1<this->params.dimension;b1++) {
-              ss >> _position[b1];
-            }
-            for (unsigned int b1=0;b1<this->params.dimension;b1++) {
-              ss >> _vel[b1];
-            }
-            unsigned int _type, _hypoxic_count, _phenotype_counter;
-            double _radius, _energy,  _adhesion,  _cont_pheno, _phenotype;
-            ss >> _radius >> _energy >> _adhesion >> _type >> _hypoxic_count >> _cont_pheno >> _phenotype >> _phenotype_counter;
-
-            double _O2,_dxO2,_dyO2, _dzO2;
-            ss >> _O2 >> _dxO2 >> _dyO2 >> _dzO2;
-
-            double _reloj;
-            ss >> _reloj;
-
-            // set new start time
-            this->reloj = _reloj;
-            this->starting_time = _reloj;
-
-            /*  
-            // checking  
-            cout << " read: " << endl << _name << " " << _mother_name << " " << _birthday;
-            cout << "box: ";
-            for (unsigned int b1=0;b1<this->params.dimension;b1++) {
-              cout << _box[b1] << " ";
-            }
-            cout << endl;
-            cout << "position: ";
-            for (unsigned int b1=0;b1<this->params.dimension;b1++) {
-              cout << _position[b1] << " ";
-            }
-            cout << endl;
-            cout << " ---- " << endl;
-            */
-
-            this->new_maxx = this->maxx;
-            this->new_maxy = this->maxy;
-            if (params.dimension>2) this->new_maxz = this->maxz;
-            
-            this->new_minx = this->minx;
-            this->new_miny = this->miny;
-            if (params.dimension>2) this->new_minz = this->minz;
-
-            cell_counter++;
-            Cell cell;
-            for (unsigned int j=0; j<params.dimension; j++)
-            {
-              cell.position[j]=_position[j];
-              cell.position_old[j]=_position[j];
-              cell.vel[j]=_vel[j];
-            }
-
-            cell.name = _name;
-            cell.contacts = 0; // TO DO: read this from file
-            cell.mother_name = _mother_name;
-            cell.birthday = _birthday;
-            cell.radius = _radius;
-            cell.energy = _energy;
-            cell.type = _type;
-            cell.cont_pheno = _cont_pheno;
-            cell.phenotype_counter = _phenotype_counter;
-            cell.O2 = _O2;
-            cell.dxO2 = _dxO2;
-            cell.dyO2 = _dyO2;
-            cell.dzO2 = _dzO2;
-            cell.phenotype = _phenotype;
-            cell.hypoxic_count = _hypoxic_count;
-            cell.adhesion = _adhesion;
-
-            cell.box[0]=_box[0];
-            cell.box[1]=_box[1];
-            if (params.dimension>2) {
-              cell.box[2]=_box[2];
-            } else {
-              cell.box[2]=0;
-            }
-            int u = _box[0];
-            int v = _box[1];
-            int w = 0;
-            if (params.dimension>2) {
-              w = _box[2];
-            }
-            // check
-            //cout << " cell " << cell_counter << " placed in box: " << u << " " << v << " " << w << endl;
-            //cout << "        position: " << cell.position[0] << " " << cell.position[1] << " " << cell.position[2] << endl;
-            //cout << "        phenotype " << cell.cont_pheno << endl;
-
-            // add cell to boxes
-            this->boxes_A[u][v][w].cells.push_back(cell);
-            this->boxes_new_A[u][v][w].cells.push_back(cell);
-
-            // compute the extrema of occupied boxes
-            if(this->maxx<u && u<(int) params.boxesx) {
-              this->new_maxx=u;	
-            }
-            if(this->maxy<v && v<(int) params.boxesy) {
-              this->new_maxy=v;	
-            }  
-            if(this->maxz<w && w<(int) params.boxesz) {
-              this->new_maxz=w;	
-            }	
-    
-            if(this->minx>u && u>0) {
-              this->new_minx=u;	
-            }
-            if(this->miny>v && v>0) {
-              this->new_miny=v;	
-            }
-            if(this->minz>w && w>0) {
-              this->new_minz=w;	
-            }	
-
-            this->maxx = this->new_maxx;
-            this->maxy = this->new_maxy;
-            if (params.dimension>2) this->maxz = this->new_maxz;
-            
-            this->minx = this->new_minx;
-            this->miny = this->new_miny;
-            if (params.dimension>2) this->minz = this->new_minz;
-
-            
-
-          }
         }
         file.close();
     } else {
@@ -757,7 +713,6 @@ void CoupledModel::update_maximum()
    Cleans the elements of the box and update the new cells 
    *************************************************************************** */
 void CoupledModel::update_box(){
-  //unsigned int old_n_of_cells = this->total_no_of_cells;
   this->total_no_of_cells = 0;
   
   for(int u=this->minx; u<=this->maxx; u++) {
@@ -779,10 +734,6 @@ void CoupledModel::update_box(){
       }  
     }  
   }
-  /*if (this->total_no_of_cells != old_n_of_cells) {
-      std::cout << old_n_of_cells << " vs " << this->total_no_of_cells <<std::endl;
-      std::cout << " ** Warning: total number of cells do not match after update_box()" << endl;
-  }*/
 }
 
 /* ***************************************************************************
@@ -924,7 +875,6 @@ void CoupledModel::cell_birth(Cell& cell){
         double f = params.hypoxic_birth * params.time_step * (1.0 - (1.0 - x) * (1.0 - x));
         double g = params.normoxic_birth * params.time_step * (cell.O2 / (cell.O2 + params.oxy_half_sat)) * (1 - x * x);
         double n = this->boxes_A[bx][by][bz].cells.size();
-        //double death_rate = params.death * n;
         double death_rate = params.death*pow(5,n);
         double R = f + g - death_rate;
 
@@ -969,7 +919,6 @@ void CoupledModel::cell_birth(Cell& cell){
 
     /// @brief cell birth
     if(birthconds){
-        // 3D: 2.rnew^3 = rold^3; 2D: 2.rnew^2 = rold^2
         double new_radius = cell.radius / pow(2., 1. / params.dimension);
         cell.radius = new_radius;
 
@@ -979,7 +928,7 @@ void CoupledModel::cell_birth(Cell& cell){
         if (cell.contacts != 0) {
                 //We take the preferred position calculated by the neighbours
                 //Noise is necessary in order not to repeat births.
-                // todo...
+                // todo... ???ALFONSO
                 //newpositionx=newpositionx + this->birth_step + box_muller(0,0.3,cell.radius,-cell.radius);
                 //newpositiony=newpositiony + this->birth_step + box_muller(0,0.3,cell.radius,-cell.radius);
                 //newpositionz=newpositionz + this->birth_step + box_muller(0,0.3,cell.radius,-cell.radius);
