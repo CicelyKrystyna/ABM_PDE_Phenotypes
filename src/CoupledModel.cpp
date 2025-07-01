@@ -17,83 +17,53 @@ double PIG=3.1415926535897932384626433832795;
    @brief
    use this function to specify an initial concentration as an analytic function of space
    the function uses a flag int params.initial_concentration_function_type
-   0: constant value (returns the old version params.initial_oxygen)
+   0: constant value across whole domain
    1: two values (half-half)
    2: two values inner circle (25% of max radius) well oxygenated
    3: three values inner circle (25% of max radius) well oxygenated
       intermediate circle (25-50% of max radius) poorly oxygenated
    4: oxygen changes dynamically with time and space
    if the type is invalid, the function uses type = 0
-
 */
 double CoupledModel::oxygen_concentration_function(vector<double>& position){
+
+  const double x = position[0];
+  const double y = position[1];
+  const double centre_x = this->params.lattice_length_x / 2.0;
+  const double centre_y = this->params.lattice_length_y / 2.0;
+    
+  auto distance_from = [](double x1, double y1, double x2, double y2) {
+      return sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
+  };
+    
   switch (this->params.initial_concentration_function_type) {
     case 0:
       return this->params.initial_oxygen[0];
     
     case 1: {
-      if (position[0]<=this->params.lattice_length_x/2.0){
-        return this->params.initial_oxygen[1];
-      } else {
-        return this->params.initial_oxygen[0];
-      }
+        return (x <= centre_x) ? this->params.initial_oxygen[1] : this->params.initial_oxygen[0];
     }
 
     case 2: {
-        double radius_from_centre;
-        radius_from_centre = (this->params.lattice_length_x/2.0-position[0])*(this->params.lattice_length_x/2.0-position[0])
-                +(this->params.lattice_length_y/2.0-position[1])*(this->params.lattice_length_y/2.0-position[1]);
-        radius_from_centre = sqrt(radius_from_centre);
-        if (radius_from_centre < 0.25*this->params.lattice_length_x/2.0) {
-            return this->params.initial_oxygen[0];
-        } else {
-            return this->params.initial_oxygen[1];
-        }
+        double radius_from_centre = distance_from(x,y,centre_x,centre_y);
+        return (radius_from_centre < 0.25*centre_x) ? this->params.initial_oxygen[0] : this->params.initial_oxygen[1];
     }
 
     case 3: {
-        double radius_from_centre;
-        radius_from_centre = (this->params.lattice_length_x/2.0-position[0])*(this->params.lattice_length_x/2.0-position[0])
-                               +(this->params.lattice_length_y/2.0-position[1])*(this->params.lattice_length_y/2.0-position[1]);
-        radius_from_centre = sqrt(radius_from_centre);
-        if (radius_from_centre < 0.25*this->params.lattice_length_x/2.0) {
-            return this->params.initial_oxygen[0];
-        } else if (0.25*this->params.lattice_length_x/2.0 < radius_from_centre && radius_from_centre < 0.5*this->params.lattice_length_x/2.0) {
-            return this->params.initial_oxygen[1];
-        } else {
-            return this->params.initial_oxygen[2];
-        }
+        double radius_from_centre = distance_from(x,y,centre_x,centre_y);
+        return (radius_from_centre < 0.25 * centre_x) ? this->params.initial_oxygen[0] :
+               ((radius_from_centre < 0.5 * centre_x) ? this->params.initial_oxygen[1] :
+                                                       this->params.initial_oxygen[2]);
+
     }
 
     case 4: {
         // 2D CASE
-        double radius_from_p1;
-        //radius_from_p1 = (100.0-position[0])*(100.0-position[0])+(100.0-position[1])*(100.0-position[1]);
-        radius_from_p1 = (200.0-position[0])*(200.0-position[0])+(200.0-position[1])*(200.0-position[1]);
-        radius_from_p1 = sqrt(radius_from_p1);
-        double radius_from_p2;
-        //radius_from_p2 = (300.0-position[0])*(300.0-position[0])+(300.0-position[1])*(300.0-position[1]);
-        radius_from_p2 = (600.0-position[0])*(600.0-position[0])+(600.0-position[1])*(600.0-position[1]);
-        radius_from_p2 = sqrt(radius_from_p2);
-        //if (radius_from_p1 < 40.0) {
-        if (radius_from_p1 < 100.0) {
-            return this->params.initial_oxygen[0];
-        //} else if (radius_from_p2 < 40.0 && reloj > 1500) {
-        } else if (radius_from_p2 < 100.0 && reloj > 5000000) {
-            return this->params.initial_oxygen[0];
-        } else {
-                return this->params.initial_oxygen[1];
-        }
-        /*double radius_from_centre;
-        radius_from_centre = (this->params.lattice_length_x/2.0-position[0])*(this->params.lattice_length_x/2.0-position[0])
-                +(this->params.lattice_length_y/2.0-position[1])*(this->params.lattice_length_y/2.0-position[1]);
-        radius_from_centre = sqrt(radius_from_centre);
-        double scaled_radial_distance = radius_from_centre*200.0/this->params.lattice_length_x;
-        if (100 - scaled_radial_distance > 1){
-            return this->params.initial_oxygen[0] - scaled_radial_distance;
-        } else {
-            return this->params.initial_oxygen[1];
-        }*/
+        double radius_from_p1 = distance_from(x,y,200.0,200.0);
+        double radius_from_p2 = distance_from(x,y,600.0,600.0);
+        return (radius_from_p1 < 100.0) ? this->params.initial_oxygen[0] :
+               ((radius_from_p2 < 100.0 && reloj > 5000000) ? this->params.initial_oxygen[0] :
+                                                              this->params.initial_oxygen[1]);
     }
     
     default: {
@@ -119,14 +89,7 @@ double CoupledModel::aleatorio()
    ***************************************************************************** */
 double CoupledModel::aleatorio(const double a, const double b)
 {
-  double random_value = 0.;
- 
-  if (a<=b) {
-    random_value = b - (b-a)*this->aleatorio();
-  } else {
-    random_value = 1. - 2.*this->aleatorio();
-  }
-  return(random_value);
+  return (a<=b) ? b - (b-a)*this->aleatorio() : 1. - 2.*this->aleatorio();
 }
 
 /* *****************************************************************************
@@ -889,7 +852,8 @@ void CoupledModel::checkElementsInBoxes()
    *****************************************************************************  */
 void CoupledModel::cell_mutation(Cell& cell)
 {
-    if (reloj>2000) {
+    //if (reloj>2000) {
+    if (reloj>0) {
       double mutation = aleatorio();
       double lambda = params.mutation_probability;
       double nu = params.mutation_amount;
@@ -954,7 +918,8 @@ void CoupledModel::cell_birth(Cell& cell){
 
     // TOMMASO FUNCTION
     bool birthconds = false;
-    if (reloj>2000) {
+    //if (reloj>2000) {
+    if (reloj>0) {
         double x = 1.0 - cell.cont_pheno;
         double f = params.hypoxic_birth * params.time_step * (1.0 - (1.0 - x) * (1.0 - x));
         double g = params.normoxic_birth * params.time_step * (cell.O2 / (cell.O2 + params.oxy_half_sat)) * (1 - x * x);
