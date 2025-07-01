@@ -2078,7 +2078,8 @@ void CoupledModel::loop()
         if (params.writeVtkCells && (this->reloj%params.write_cells_frequency==0)) {
             s0 = this->params.outputDirectory + this->params.testcase + "_cells.";
             outputFileName << s0  << reloj << ".vtk";
-            this->writeVtk(outputFileName.str());      
+            //this->writeVtk(outputFileName.str());      
+            this->writeVtkPolydata(outputFileName.str());      
         }
 
         if (params.writeVtkVessels) {
@@ -2202,7 +2203,8 @@ void CoupledModel::end()
   // proposed by ChatGPT
   if (!params.writeVtkCells) {
     std::string outputFileName = params.outputDirectory + params.testcase + "_cells." + std::to_string(reloj) + ".vtk";
-    writeVtk(outputFileName);
+    //writeVtk(outputFileName);
+    writeVtkPolydata(outputFileName);
   }
   /*if (params.writeVtkCells==0) {
     s0 = this->params.outputDirectory + this->params.testcase + "_cells.";
@@ -2323,6 +2325,153 @@ void CoupledModel::writeFullState(string filename)
   }
 
   outfile.close();
+}
+
+/* ****************************************************************************
+   WRITE CELLS TO VTK (POLYDATA FORMAT)
+   **************************************************************************** */
+void CoupledModel::writeVtkPolydata(string filename,unsigned int onlyCoord)
+{
+  ofstream outfile(filename.c_str());
+
+  // rename (locally) the total number of cells
+  unsigned int nCells = this->total_no_of_cells;
+  
+  outfile << "# vtk DataFile Version 2.0" << std::endl;
+  outfile << "Point cloud written as VTK POLYDATA" << std::endl;
+  outfile << "ASCII\n\n";
+  outfile << "DATASET POLYDATA\n";
+  outfile << "POINTS " << nCells << " double\n";
+
+  // Track cell index
+  unsigned int ic = 0;
+
+  // Write all point positions
+  for (int k = this->minx; k <= this->maxx; ++k) {
+      for (int l = this->miny; l <= this->maxy; ++l) {
+          for (int n = this->minz; n <= this->maxz; ++n) {
+              for (unsigned int i = 0; i < this->boxes_A[k][l][n].cells.size(); ++i) {
+                  outfile << this->boxes_A[k][l][n].cells[i].position[0] << " "
+                          << this->boxes_A[k][l][n].cells[i].position[1] << " "
+                          << this->boxes_A[k][l][n].cells[i].position[2] << "\n";
+                  ic++;
+              }
+          }
+      }
+  }
+  outfile << "\n";
+
+  // Write VERTICES section
+  outfile << "VERTICES " << ic << " " << 2 * ic << "\n";
+  for (unsigned int i = 0; i < ic; ++i) {
+      outfile << "1 " << i << "\n";
+  }
+
+  outfile << "POINT_DATA " << nCells << std::endl;
+  outfile << "SCALARS radius double" << std::endl;
+  outfile << "LOOKUP_TABLE default" << std::endl;
+
+  for (int k = this->minx; k <= this->maxx; k++) {
+      for (int l = this->miny; l <= this->maxy; l++) {
+          for (int n = this->minz; n <= this->maxz; n++) {
+              for (unsigned int i = 0; i < this->boxes_A[k][l][n].cells.size(); i++) {
+                  outfile << this->boxes_A[k][l][n].cells[i].radius << std::endl;
+              }
+          }
+      }
+  }
+
+  outfile << std::endl;
+
+  if (onlyCoord==0) {
+    outfile << "SCALARS status double" << std::endl;
+    outfile << "LOOKUP_TABLE default" << std::endl;
+
+    for (int k = this->minx; k <= this->maxx; k++) {
+        for (int l = this->miny; l <= this->maxy; l++) {
+            for (int n = this->minz; n <= this->maxz; n++) {
+                for (unsigned int i = 0; i < this->boxes_A[k][l][n].cells.size(); i++) {
+                    outfile << this->boxes_A[k][l][n].cells[i].type << std::endl;
+                }
+            }
+        }
+    }
+
+    outfile << std::endl;
+
+    // write oxygen concentration
+    outfile << "SCALARS concentration double" << std::endl;
+    outfile << "LOOKUP_TABLE default" << std::endl;
+    for(int k=this->minx; k<=this->maxx; k++) {
+      for(int l=this->miny; l<=this->maxy; l++){
+	    for(int n=this->minz; n<=this->maxz; n++) {
+	        for(unsigned int i=0;i<this->boxes_A[k][l][n].cells.size();i++) {
+	            outfile << this->boxes_A[k][l][n].cells[i].O2 << std::endl;
+	        }
+	    }
+      }
+    }
+    outfile << std::endl;
+    
+    //write phenoype
+    outfile << "SCALARS phenotype double" << std::endl;
+    outfile << "LOOKUP_TABLE default" << std::endl;
+    for(int k=this->minx; k<=this->maxx; k++) {
+      for(int l=this->miny; l<=this->maxy; l++){
+	    for(int n=this->minz; n<=this->maxz; n++) {
+	        for(unsigned int i=0;i<this->boxes_A[k][l][n].cells.size();i++) {
+	            outfile << this->boxes_A[k][l][n].cells[i].phenotype << std::endl;
+	        }
+	    }
+      }
+    }
+    outfile << std::endl;
+
+    outfile << "SCALARS cont_pheno double" << std::endl;
+    outfile << "LOOKUP_TABLE default" << std::endl;
+    for(int k=this->minx; k<=this->maxx; k++) {
+      for(int l=this->miny; l<=this->maxy; l++){
+	    for(int n=this->minz; n<=this->maxz; n++) {
+	        for(unsigned int i=0;i<this->boxes_A[k][l][n].cells.size();i++) {
+	            outfile << this->boxes_A[k][l][n].cells[i].cont_pheno << std::endl;
+	        }
+	    }
+      }
+    }
+    outfile << std::endl;
+    
+    //write name
+    outfile << "SCALARS name double" << std::endl;
+    outfile << "LOOKUP_TABLE default" << std::endl;
+    for(int k=this->minx; k<=this->maxx; k++) {
+      for(int l=this->miny; l<=this->maxy; l++){
+	    for(int n=this->minz; n<=this->maxz; n++) {
+	        for(unsigned int i=0;i<this->boxes_A[k][l][n].cells.size();i++) {
+	            outfile << this->boxes_A[k][l][n].cells[i].name << std::endl;
+	        }
+	    }
+      }
+    }
+    outfile << std::endl;
+
+
+    //write vessel interaction
+    outfile << "SCALARS vessel_interaction double" << std::endl;
+    outfile << "LOOKUP_TABLE default" << std::endl;
+    for(int k=this->minx; k<=this->maxx; k++) {
+      for(int l=this->miny; l<=this->maxy; l++){
+	    for(int n=this->minz; n<=this->maxz; n++) {
+	        for(unsigned int i=0;i<this->boxes_A[k][l][n].cells.size();i++) {
+	            outfile << this->boxes_A[k][l][n].cells[i].vessel_interaction << std::endl;
+	        }
+	    }
+      }
+    }
+    outfile << std::endl;
+
+
+  }
+
 }
 
 /* ****************************************************************************

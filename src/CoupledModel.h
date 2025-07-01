@@ -245,6 +245,7 @@ class CoupledModel
      @brief write cell list in a .vtk file
      @param[in] onlyCoord = 1 : write only the coordinates and radius
   */
+  void writeVtkPolydata(std::string f,unsigned int onlyCoord=0);
   void writeVtk(std::string f,unsigned int onlyCoord=0);
   void writeBoxesVtk(string f);
   void writeVesselsVtk(string f);
