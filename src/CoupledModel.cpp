@@ -1957,27 +1957,53 @@ void CoupledModel::loop()
           vardist.close();
           // ********************************
         }
-    
-        // ============================================
-        // write intermediary cell numbers to data file
-        // ============================================
-        ofstream deadcellnumbersFile;
-        string dead_list =  this->params.casedirectory + this->params.casename + "_dead_cells.txt";
-        deadcellnumbersFile.open(dead_list.c_str(),ios::app);
-        deadcellnumbersFile << this->total_no_of_removed_cells << " " ;
-        deadcellnumbersFile.close();
-        ofstream alivecellnumbersFile;
-        string alive_list =  this->params.casedirectory + this->params.casename + "_alive_cells.txt";
-        alivecellnumbersFile.open(alive_list.c_str(),ios::app);
-        alivecellnumbersFile << this->total_no_of_cells << " " ;
-        alivecellnumbersFile.close();
-        ofstream allcellnumbersFile;
-        string full_list =  this->params.casedirectory + this->params.casename + "_all_cells.txt";
-        allcellnumbersFile.open(full_list.c_str(),ios::app);
-        allcellnumbersFile << this->total_no_of_cells+this->total_no_of_removed_cells << " " ;
-        allcellnumbersFile.close();
-        // ********************************
-
+      
+      if (this->reloj%params.count_cells_frequency==0){
+          double mean_pheno = 0.0;
+          for(int k=this->minx; k<=this->maxx; k++) {
+              for(int l=this->miny; l<=this->maxy; l++){
+                  for(int n=this->minz; n<=this->maxz; n++) {
+                      for(unsigned int i=0; i<this->boxes_A[k][l][n].cells.size(); i++) {
+                          mean_pheno += this->boxes_A[k][l][n].cells[i].cont_pheno;
+                      }
+                  }
+              }
+          }
+          mean_pheno = mean_pheno/this->total_no_of_cells;
+          
+          // =================================================================
+          // write mean cont_pheno to data file
+          // =================================================================
+          ofstream meanpheno;
+          string meanpheno_list =  this->params.casedirectory + this->params.casename + "_mean_phenotype.txt";
+          meanpheno.open(meanpheno_list.c_str(),ios::app);
+          meanpheno << mean_pheno << " " ;
+          meanpheno.close();
+          // ********************************
+          
+          
+          // ============================================
+          // write intermediary cell numbers to data file
+          // ============================================
+          ofstream deadcellnumbersFile;
+          string dead_list =  this->params.casedirectory + this->params.casename + "_dead_cells.txt";
+          deadcellnumbersFile.open(dead_list.c_str(),ios::app);
+          deadcellnumbersFile << this->total_no_of_removed_cells << " " ;
+          deadcellnumbersFile.close();
+          ofstream alivecellnumbersFile;
+          string alive_list =  this->params.casedirectory + this->params.casename + "_alive_cells.txt";
+          alivecellnumbersFile.open(alive_list.c_str(),ios::app);
+          alivecellnumbersFile << this->total_no_of_cells << " " ;
+          alivecellnumbersFile.close();
+          ofstream allcellnumbersFile;
+          string full_list =  this->params.casedirectory + this->params.casename + "_all_cells.txt";
+          allcellnumbersFile.open(full_list.c_str(),ios::app);
+          allcellnumbersFile << this->total_no_of_cells+this->total_no_of_removed_cells << " " ;
+          allcellnumbersFile.close();
+          // ********************************
+          
+      }
+      
         // ********************************
         // Loop of forces and movement
         // ********************************

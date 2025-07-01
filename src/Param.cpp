@@ -77,9 +77,20 @@ void Param::readFile(string _file)
   mutation_probability = reader.getDouble("mutations", "mutation_probability", 0.01);
 
   // [oxygen]
-  initial_oxygen = reader.getDoubleList("oxygen", "initial_oxygen", std::vector<double>(3, 60.0));
+  initial_concentration_function_type = reader.getInt("oxygen", "initial_concentration_function_type", 0);
+  int size = 1;
+  switch (initial_concentration_function_type) {
+      case 1:
+      case 2:
+      case 4:
+          size = 2;
+          break;
+      case 3:
+          size = 3;
+          break;
+  }
+  initial_oxygen = reader.getDoubleList("oxygen", "initial_oxygen", std::vector<double>(size, 60.0));
   oxygen_response = reader.getDouble("oxygen", "oxygen_response", 0.0);
-  initial_concentration_function_type = reader.getDouble("oxygen", "initial_concentration_function_type", 0.0);
   oxy_half_sat = reader.getDouble("oxygen", "oxy_half_sat", 2.5);
 
   // [geo] --- boxes and geometry
@@ -208,8 +219,19 @@ void Param::print()
   cout << endl;
   
   cout << "[oxygen]" << endl;
+  int size = 1;
+  switch (initial_concentration_function_type) {
+      case 1:
+      case 2:
+      case 4:
+          size = 2;
+          break;
+      case 3:
+          size = 3;
+          break;
+  }
   cout << "initial oxygen = ";
-  for (int i=0; i<3; i++) {
+  for (int i=0; i<size; i++) {
       cout << initial_oxygen[i] << " ";
   }
   cout << endl;
