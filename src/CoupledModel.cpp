@@ -4,6 +4,7 @@
 #include <math.h>
 #include <list>
 #include <chrono>
+#include <algorithm>
 
 /* ****************************************************************************/
 using namespace std;
@@ -803,30 +804,20 @@ void CoupledModel::checkElementsInBoxes()
    *****************************************************************************  */
 void CoupledModel::cell_mutation(Cell& cell)
 {
-    //if (reloj>2000) {
-    if (reloj>0) {
-      double mutation = aleatorio();
-      double lambda = params.mutation_probability;
-      double nu = params.mutation_amount;
-      double pR = 0.5;
-      double leftside = 0.0;
-      double rightside = 1.0;
+    //if (reloj <= 2000) return;
 
-      // mutate cells left or right or not at all
-      if (mutation < lambda) {
-          double pR_mutation = aleatorio();
-          if (pR_mutation < pR) cell.cont_pheno = cell.cont_pheno + nu;
-          else cell.cont_pheno = cell.cont_pheno - nu;
-      } else cell.cont_pheno = cell.cont_pheno;
+    double mutation = aleatorio();
+    double lambda = params.mutation_probability;
+    double nu = params.mutation_amount;
+    double pR = 0.5;
 
-      // prevent phenotype being outwith [0,1] interval
-      if (cell.cont_pheno <= 0.0) cell.cont_pheno = leftside;
-      if (cell.cont_pheno >= 1.0) cell.cont_pheno = rightside;
-    }else{
-      return;
+    if (mutation < lambda) {
+        double pR_mutation = aleatorio();
+        cell.cont_pheno += (pR_mutation < pR) ? nu : -nu;
     }
-}
 
+    cell.cont_pheno = std::max(0.0, std::min(cell.cont_pheno, 1.0));
+}
 
 /* ***************************************************************************
    change the status of cell according to phenotype
@@ -838,11 +829,8 @@ void CoupledModel::cell_mutation(Cell& cell)
 */
 void CoupledModel::phenotype_of_cell(Cell& cell)
 {
-    // providing cell alive
     if(cell.type != 3) {
-        // normoxic if phenotype >=0.5
         if(cell.cont_pheno >= 0.5) cell.type = 1;
-        // hypoxic if phenotype <0.5
         if(cell.cont_pheno < 0.5) cell.type = 2;
     }
 }
