@@ -435,7 +435,9 @@ void CoupledModel::set_ic_cells()
     cell.hypoxic_count = 0;
 
     // adhesion value
-    cell.adhesion=params.adhesion_value;
+      /// this is modified now so that cells with a hypoxic phenotype are less adhesive
+    //cell.adhesion=params.adhesion_value;
+    cell.adhesion = params.hypoxic_adhesion_value + (params.adhesion_value - params.hypoxic_adhesion_value)*cell.cont_pheno;
     
     //Cell box  
     int u=(int)(floor(cell.position[0]/this->box_sizex));

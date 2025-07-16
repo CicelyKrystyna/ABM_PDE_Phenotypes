@@ -60,6 +60,7 @@ void Param::readFile(string _file)
   YoungM = reader.getDouble("cells", "YoungM", 1e-3);
   PoissonNo = reader.getDouble("cells", "PoissonNo", 0.5);
   adhesion_value = reader.getDouble("cells", "adhesion_value", 3.72e-4);
+  hypoxic_adhesion_value = reader.getDouble("cells", "hypoxic_adhesion_value", 3.72e-4);
   compressibility = reader.getDouble("cells", "compressibility", 1.0);
   contact_inhibition = reader.getDouble("cells", "contact_inhibition", 16.0);
   // birth energy parameters

@@ -62,6 +62,7 @@ class Param
   double Gcm;
   /// @brief adhesion values
   double adhesion_value;
+  double hypoxic_adhesion_value;
   double variance_motion;
   /// @brief birth energy function
   double be_displacement;
