@@ -66,7 +66,7 @@ void Param::readFile(string _file)
   hypoxic_birth = reader.getDouble("cells", "hypoxic_birth", 6.0e-5);
   normoxic_birth = reader.getDouble("cells", "normoxic_birth", 6.0e-4);
   death = reader.getDouble("cells", "death", 0.0);
-  hypoxic_friction = reader.getDouble("cells", "hypoxic_friction", 1.0);
+  hypoxic_friction = reader.getDouble("cells", "hypoxic_friction", 0.01);
   be_displacement = reader.getDouble("cells", "be_displacement", 1.5);
   be_multiplier = reader.getDouble("cells", "be_multiplier", 12.0);
   variance_motion = reader.getDouble("cells", "variance_motion", 4e-3);

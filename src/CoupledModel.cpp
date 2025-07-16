@@ -1216,13 +1216,15 @@ void CoupledModel::cell_vessel_interaction(Cell& cell)
 void CoupledModel::update_cell_velocity(Cell& cell)
 {
   /// @brief different phenotypes possibly having different friction
-  double friction_modifier = 1.0;
-  double diff_multiplier = 1.0;
-  if (cell.cont_pheno < 0.5){
+    /// used so that we can allow cells with a hypoxic phenotype to be more motile
+  //double friction_modifier = 1.0;
+  /*if (cell.cont_pheno < 0.5){
       friction_modifier = params.hypoxic_friction;
-  }
-  double friction = params.Gcm * friction_modifier;
-
+  }*/
+  //double friction = params.Gcm * friction_modifier;
+  double friction = params.hypoxic_friction + (params.Gcm - params.hypoxic_friction)*cell.cont_pheno;
+  double diff_multiplier = 1.0;
+    
   switch (cell.type)
   {
     
